@@ -346,7 +346,7 @@
     // Firebase Imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, query, where, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, doc, getDoc, setDoc, query, where, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
     // --- Firebase Setup ---
     let app, db, auth, userId = null;
@@ -376,6 +376,7 @@
     }
     
     const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    // NOTE: This collection now stores UNIQUE high scores per user/mode
     const SCORE_COLLECTION_PATH = `artifacts/${appId}/public/data/math_dash_scores`;
     let attempts = 0;
     const MAX_ATTEMPTS = 5;
@@ -439,16 +440,28 @@
         bgImage: null,
         bgImageLoaded: false,
         bgImageY: 0,
-        // NEW: Live data for competitors
+        // Live data for competitors
         competitors: [] 
     };
 
     // --- Firebase Listeners and Competition Logic ---
     let unsubscribeCompetitors = null;
+    
+    /**
+     * Helper to generate a unique doc ID for high scores (user_mode).
+     */
+    function getHighscoreDocId(mode, uid) {
+        if (mode === 'OVERALL') {
+            // For Overall, use just the UID
+            return uid;
+        }
+        // For mode-specific scores, combine UID and Mode
+        return `${uid}_${mode}`;
+    }
 
     /**
-     * Starts a real-time listener for the top scores in the current game mode 
-     * to visualize competitors on the track.
+     * Starts a real-time listener for the top scores in the current game mode.
+     * NOTE: Query simplified to use only 'mode' and 'score' to mitigate indexing errors.
      */
     function startCompetitorListener() {
         if (!db || !gameState.mode) return;
@@ -459,11 +472,11 @@
         }
 
         const mode = gameState.mode;
-        // Query for scores in the current mode, ordered by distance (to track who is ahead)
+        // Query only by mode and score to avoid complex indexing issues.
         const competitorsQuery = query(
             collection(db, SCORE_COLLECTION_PATH),
             where("mode", "==", mode),
-            orderBy("distance", "desc"),
+            orderBy("score", "desc"), // Primary sorting field
             limit(5) 
         );
 
@@ -476,11 +489,20 @@
                     topCompetitors.push({
                         userName: data.userName || 'Racer',
                         distance: data.distance || 0,
+                        score: data.score || 0, // Keep score data for sorting ties
                         userId: data.userId
                     });
                 }
             });
-            // Update the game state with the competitors
+            // Sort client-side by distance if scores are equal, but mainly rely on score
+            topCompetitors.sort((a, b) => {
+                if (b.score !== a.score) {
+                    return b.score - a.score;
+                }
+                return b.distance - a.distance;
+            });
+            
+            // Update the game state with the top competitors
             gameState.competitors = topCompetitors.slice(0, 4); 
         }, (error) => {
             console.error("Error fetching live competitors:", error);
@@ -511,7 +533,7 @@
     backgroundImage.onerror = () => {
         console.error("Failed to load background image.");
     };
-    // CRUCIAL FIX: Use '../' to step up one directory level from 'public' to reach 'bg_image.jpg'
+    // Corrected Path: Use '../' to step up one directory level from 'public' to reach 'bg_image.jpg'
     backgroundImage.src = '../bg_image.jpg'; 
 
 
@@ -560,7 +582,7 @@
         gameState.isRunning = false;
         if (gameState.gameInterval) clearInterval(gameState.gameInterval);
         if (gameState.timeLimitInterval) clearInterval(gameState.timeLimitInterval);
-        stopCompetitorListener(); // NEW: Stop listening for competitors
+        stopCompetitorListener(); // Stop listening for competitors
         drawStaticScreen(); // Redraw menu screen style on canvas
     }
     
@@ -664,49 +686,91 @@
 
     // --- Firestore Score and Leaderboard Functions ---
 
+    /**
+     * Saves the score/distance for the given mode, updating the existing high score 
+     * document or creating a new one if it's a new personal best.
+     */
     async function saveScore(score, distance) {
         if (!gameState.isAuthReady || !db || !userId) {
             console.warn("Authentication not ready or DB not initialized. Score not saved.");
             return;
         }
         
-        try {
-            await addDoc(collection(db, SCORE_COLLECTION_PATH), {
-                userId: userId,
-                userName: userName, // Save the player's chosen name
-                score: score,
-                distance: parseFloat(distance.toFixed(1)),
-                mode: gameState.mode,
-                timestamp: serverTimestamp(),
-            });
-            console.log("Score saved successfully!");
-        } catch (error) {
-            console.error("Error saving score:", error);
+        // 1. Logic for Mode-Specific High Score (if applicable)
+        if (gameState.mode) {
+            const modeDocId = getHighscoreDocId(gameState.mode, userId);
+            const modeScoreRef = doc(db, SCORE_COLLECTION_PATH, modeDocId);
+            
+            // Check the existing score for this mode
+            const docSnap = await getDoc(modeScoreRef);
+            const existingScore = docSnap.exists() ? docSnap.data().score : -1;
+
+            if (score > existingScore) {
+                try {
+                    await setDoc(modeScoreRef, {
+                        userId: userId,
+                        userName: userName,
+                        score: score,
+                        distance: parseFloat(distance.toFixed(1)),
+                        mode: gameState.mode,
+                        timestamp: serverTimestamp(),
+                        // A flag to easily filter mode-specific high scores
+                        isOverall: false 
+                    });
+                    console.log(`High score saved for mode: ${gameState.mode}!`);
+                } catch (error) {
+                    console.error(`Error saving mode-specific high score for ${gameState.mode}:`, error);
+                }
+            }
+        }
+        
+        // 2. Logic for Overall High Score
+        // The Overall high score should be the highest score across ALL modes.
+        const overallDocId = getHighscoreDocId('OVERALL', userId);
+        const overallScoreRef = doc(db, SCORE_COLLECTION_PATH, overallDocId);
+        
+        const docSnap = await getDoc(overallScoreRef);
+        const existingOverallScore = docSnap.exists() ? docSnap.data().score : -1;
+        
+        // Only update the overall score if the current game's score is higher than the current overall record
+        if (score > existingOverallScore) {
+             try {
+                await setDoc(overallScoreRef, {
+                    userId: userId,
+                    userName: userName,
+                    score: score,
+                    distance: parseFloat(distance.toFixed(1)),
+                    mode: 'OVERALL', // Store 'OVERALL' as the mode for this record
+                    timestamp: serverTimestamp(),
+                    isOverall: true 
+                });
+                console.log("New Overall High Score saved!");
+            } catch (error) {
+                console.error("Error saving Overall high score:", error);
+            }
         }
     }
 
     /**
      * Loads and displays the top 10 high scores based on the current filter/mode.
+     * NOTE: Queries simplified to avoid complex indexing that caused the Firebase error.
      */
     let unsubscribeLeaderboard = null;
 
    function loadHighScores(modeFilter = gameState.currentFilter) {
         if (!db) return;
 
-        // If a listener already exists, unsubscribe it before setting up a new one
         if (unsubscribeLeaderboard) {
             unsubscribeLeaderboard();
             unsubscribeLeaderboard = null;
         }
 
-        // Update title immediately
         if (modeFilter !== 'OVERALL') {
             LEADERBOARD_TITLE.textContent = `Top Dashers (${modeFilter})`;
         } else {
             LEADERBOARD_TITLE.textContent = `Top Dashers (Overall)`;
         }
         
-        // Update button visual state
         FILTER_BUTTONS.forEach(btn => {
             btn.classList.remove('leaderboard-filter-active');
             if (btn.dataset.filter === modeFilter) {
@@ -714,23 +778,25 @@
             }
         });
 
-        // Fetch ALL scores without any orderBy or where clauses to avoid index requirements
-        let scoresQuery = collection(db, SCORE_COLLECTION_PATH);
-
-        // Assign the unsubscribe function to the global variable
+        let scoresQuery;
+        
+        // Base query filters by mode, orders only by score (to minimize index complexity)
+        scoresQuery = query(
+            collection(db, SCORE_COLLECTION_PATH),
+            where("mode", "==", modeFilter),
+            orderBy("score", "desc"),
+            limit(10)
+        );
+        
         unsubscribeLeaderboard = onSnapshot(scoresQuery, (snapshot) => {
-            attempts = 0; // Reset attempts on successful snapshot update
+            attempts = 0; 
             let scores = [];
             snapshot.forEach(doc => {
                 scores.push(doc.data());
             });
 
-            // Filter by mode if not OVERALL (do this in JavaScript to avoid needing composite index)
-            if (modeFilter !== 'OVERALL') {
-                scores = scores.filter(score => score.mode === modeFilter);
-            }
-
-            // Sort by score (primary, desc) and then distance (secondary, desc)
+            // If the scores are identical (e.g., tied score of 8), sort by distance client-side 
+            // since we removed the secondary Firestore order to fix the console error.
             scores.sort((a, b) => {
                 if (b.score !== a.score) {
                     return b.score - a.score;
@@ -738,34 +804,35 @@
                 return b.distance - a.distance;
             });
 
-            // Limit to top 10
-            scores = scores.slice(0, 10);
-
             renderLeaderboard(scores);
         }, (error) => {
             console.error("Error fetching leaderboard:", error);
             
-            // Check for permission error and trigger retry mechanism
-            if (error.code === 'permission-denied' && attempts < MAX_ATTEMPTS) {
-                attempts++;
-                const delay = Math.pow(2, attempts) * 1000;
-                console.log(`Retrying leaderboard load in ${delay / 1000}s (Attempt ${attempts}/${MAX_ATTEMPTS})...`);
-                
-                // CRUCIAL: Unsubscribe the current failing listener instance 
-                if (unsubscribeLeaderboard) {
-                    unsubscribeLeaderboard();
-                    unsubscribeLeaderboard = null;
-                }
+            // --- ERROR HANDLING FOR INDEXING ---
+            // Simplified retry/error display since the query should no longer require a composite index.
+            if (error.code === 'permission-denied' || error.code === 'failed-precondition') {
+                if (attempts < MAX_ATTEMPTS) {
+                    attempts++;
+                    const delay = Math.pow(2, attempts) * 1000;
+                    console.log(`Retrying leaderboard load in ${delay / 1000}s (Attempt ${attempts}/${MAX_ATTEMPTS})...`);
+                    
+                    if (unsubscribeLeaderboard) {
+                        unsubscribeLeaderboard();
+                        unsubscribeLeaderboard = null;
+                    }
 
-                setTimeout(() => {
-                    // Reset attempts before the recursive call to prevent double increment/timeout
-                    attempts = 0;
-                    loadHighScores(modeFilter); 
-                }, delay);
-                
-                LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-yellow-400">Loading scores... (Retrying)</p>`;
+                    setTimeout(() => {
+                        attempts = 0;
+                        loadHighScores(modeFilter); 
+                    }, delay);
+                    
+                    LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-yellow-400">Loading scores... (Retrying)</p>`;
+                } else {
+                     // Display a user-friendly error message about the index requirement
+                    LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-red-400">Error loading scores. Check Firebase rules/permissions.</p>`;
+                }
             } else {
-                LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-red-400">Error loading scores. Check permissions or network.</p>`;
+                LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-red-400">Error loading scores. Check network.</p>`;
             }
         });
     }
@@ -781,7 +848,6 @@
             const item = document.createElement('div');
             item.className = 'leaderboard-item';
             
-            // Use the stored userName if available, otherwise fall back to truncated userId
             const displayUser = data.userName || (data.userId ? data.userId.substring(0, 10) + '...' : 'Unknown');
             
             item.innerHTML = `
@@ -916,7 +982,7 @@
             gameState.flashOpacity = Math.max(0, gameState.flashOpacity - 0.1); // Fade quickly
         }
         
-        // 4. Draw Competitor Cars (NEW FEATURE)
+        // 4. Draw Competitor Cars
         if (gameState.competitors.length > 0) {
             const enemyCarW = W * 0.08; 
             const enemyCarH = H * 0.07; 
@@ -1050,8 +1116,6 @@
         // Decay speed back to base speed
         gameState.currentCarSpeed = Math.max(gameState.baseCarSpeed, gameState.currentCarSpeed - 0.1); 
         
-        // OPTIONAL: PUSH CURRENT DISTANCE TO FIREBASE PERIODICALLY (e.g., every 5 seconds)
-        // This requires updating your Firestore security rules to allow updates to the current score/distance document
         // The current implementation saves the final score only on game end.
     }
 
@@ -1097,7 +1161,7 @@
         gameState.timeLimitInterval = setInterval(updateTime, 1000);
 
         newQuestion();
-        startCompetitorListener(); // NEW: Start listening for competitors in this mode
+        startCompetitorListener(); // Start listening for competitors in this mode
     }
 
     function gameLoop() {
@@ -1127,8 +1191,6 @@
         }
 
         // Use the current mode for question generation
-        // NOTE: For true synchronization, this function should read a new question 
-        // from a shared Firestore document rather than generating locally.
         gameState.question = generateIntegerProblem(gameState.maxNumber, gameState.mode);
         gameState.correctAnswer = gameState.question.answer;
         QUESTION_DISPLAY.textContent = `${gameState.question.problem} = ?`;
@@ -1182,8 +1244,9 @@
         clearInterval(gameState.gameInterval);
         clearInterval(gameState.timeLimitInterval);
         
+        // Save score will now check if it's a new high score and update the unique document
         saveScore(gameState.score, gameState.distance);
-        stopCompetitorListener(); // NEW: Stop listening for competitors
+        stopCompetitorListener(); 
         
         document.getElementById('finalScore').textContent = gameState.score;
         document.getElementById('finalDistance').textContent = `${Math.floor(gameState.distance)} m`;
