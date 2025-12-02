@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Dash: Integer Racing Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom CSS for Game Aesthetics */
+        /* Using Luckiest Guy as it matches the bubble/comic font style from your images */
+        @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Chivo+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Chivo Mono', monospace;
+            background-color: #0d1117; /* Dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #e6e6fa;
+            padding: 10px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 420px; /* Mobile first design */
+            background-color: #161b22;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        /* Game Title Style based on "PLAY" image */
+        .game-title {
+            font-family: 'Luckiest Guy', cursive;
+            text-shadow: 2px 2px 0 #0d1117, -2px -2px 0 #0d1117, 2px -2px 0 #0d1117, -2px 2px 0 #0d1117;
+            letter-spacing: 2px;
+        }
+
+        /* --- MODE BUTTON STYLING (UPDATED FOR STARBURST/IMAGE LOOK) --- */
+        .mode-button {
+            font-family: 'Luckiest Guy', cursive;
+            background-color: #58a6ff; /* Light Blue/Teal background */
+            color: #0d1117; /* Dark text */
+            padding: 20px 15px; /* Increased padding to make room for shape */
+            border-radius: 8px; 
+            font-size: 1.6rem; /* Slightly larger text */
+            text-align: center;
+            transition: transform 0.1s;
+            cursor: pointer;
+            margin: 5px;
+            
+            /* Mimic the starburst/splat shape using clip-path */
+            clip-path: polygon(
+                50% 0%, 60% 5%, 70% 0%, 80% 5%, 90% 0%, 100% 5%, 95% 40%, 100% 70%, 90% 95%, 80% 90%, 70% 100%, 60% 95%, 50% 100%, 40% 95%, 30% 100%, 20% 95%, 10% 100%, 0% 95%, 5% 60%, 0% 30%, 10% 5%, 20% 10%, 30% 0%, 40% 5%
+            );
+            
+            /* Layered shadows for depth and bubble effect, mimicking the image border */
+            border: 4px solid #ffffff; /* White border */
+            box-shadow: 
+                0 0 0 8px rgba(9, 30, 66, 0.4), /* Dark outline around the shape */
+                0 8px 0 #2b8438, /* Deep green 3D push down effect */
+                0 10px 15px rgba(0, 0, 0, 0.5); /* General drop shadow */
+        }
+
+        .mode-button:active {
+            transform: translateY(4px); /* Pushes down when clicked */
+            box-shadow: 
+                0 0 0 8px rgba(9, 30, 66, 0.4),
+                0 4px 0 #2b8438, /* Reduced 3D push on press */
+                0 5px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Override red button style to match image design (red/orange look) */
+        .mode-button.bg-red-500 {
+            background-color: #f85149; /* Red/Orange */
+        }
+        .mode-button.bg-red-500:active {
+            box-shadow: 
+                0 0 0 8px rgba(9, 30, 66, 0.4),
+                0 4px 0 #7c2d12, /* Darker red shadow for depth */
+                0 5px 10px rgba(0, 0, 0, 0.5);
+        }
+        /* --- END MODE BUTTON STYLING --- */
+
+
+        /* Canvas for the Racing Track - Now uses 100% width and dynamic height */
+        #canvas-wrapper {
+            width: 100%;
+            /* Maintain 1:1 aspect ratio */
+            aspect-ratio: 1 / 1; 
+            border-radius: 8px;
+            border: 4px solid #30363d;
+            background-color: #0f131a;
+            touch-action: none; 
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Input and Button Styles */
+        #answerInput {
+            background-color: #21262d;
+            border: 2px solid #30363d;
+            color: #58a6ff;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .keypad-button {
+            background-color: #30363d;
+            color: #c9d1d9;
+            font-size: 1.25rem;
+            padding: 10px 0;
+            border-radius: 6px;
+            transition: transform 0.1s;
+            box-shadow: 0 4px #21262d;
+            cursor: pointer;
+        }
+
+        .keypad-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px #21262d;
+        }
+
+        .action-button {
+            background-color: #58a6ff;
+            color: #0d1117;
+            box-shadow: 0 4px #448ccf;
+        }
+
+        .action-button:active {
+            box-shadow: 0 2px #448ccf;
+        }
+
+        /* Text colors */
+        .stat-label {
+            color: #8b949e;
+        }
+        .stat-value {
+            color: #c9d1d9;
+        }
+        .correct-message {
+            color: #3fb950;
+        }
+        .incorrect-message {
+            color: #f85149;
+        }
+
+        .leaderboard-item {
+            display: grid;
+            grid-template-columns: 1fr 3fr 2fr;
+            padding: 4px 8px;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .player-id-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 4px 0;
+            border: 1px dashed transparent;
+            border-radius: 4px;
+        }
+
+        .player-id-container:hover {
+            border-color: #58a6ff55;
+        }
+        
+        .copy-icon {
+            color: #58a6ff;
+            width: 14px;
+            height: 14px;
+            display: inline-block;
+        }
+        
+        /* New styling for Sign In button */
+        #signInButton {
+            background-color: #f9d22d;
+            color: #0d1117;
+            font-family: 'Luckiest Guy', cursive;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px #d4a71c;
+            transition: background-color 0.1s;
+        }
+        #signInButton:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px #d4a71c;
+        }
+        
+        /* Style for active leaderboard filter button */
+        .leaderboard-filter-active {
+            background-color: #58a6ff;
+            color: #0d1117;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="text-center">
+        <h1 class="text-4xl font-bold text-yellow-400 game-title">MATH DASH</h1>
+        <p class="text-sm stat-label">Master the Basic Operations & Integers</p>
+        
+        <div class="player-id-container text-xs stat-label mt-1" id="userIdContainer" title="Click to copy your Firebase ID">
+            Player ID: 
+            <span id="userIdDisplay" class="font-semibold text-gray-300">Loading...</span>
+            <span id="copyFeedback" class="text-green-500 text-xs hidden">Copied!</span>
+            <svg class="copy-icon" id="copyIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z" />
+                <path d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2V5h6a2 2 0 00-2-2H5z" />
+            </svg>
+        </div>
+    </div>
+    
+    <div id="userInputScreen" class="py-6 flex flex-col gap-4 text-center">
+        <p class="text-gray-300">Enter your Player Name to compete:</p>
+        <input type="text" id="userNameInput" placeholder="Enter Name (e.g., JaneD7)" 
+                class="rounded p-3 text-lg text-center bg-gray-800 border border-yellow-400 text-yellow-400" 
+                maxlength="15">
+        <button id="signInButton" class="w-full py-3">
+            PLAY AS DAHER
+        </button>
+        <p id="authMessage" class="text-sm text-gray-400 h-4">Firebase Ready</p>
+    </div>
+
+    <div id="gameScreen" class="hidden">
+        <div class="flex justify-between p-2 rounded bg-gray-800/50 text-sm font-semibold">
+            <div class="flex flex-col items-center">
+                <span class="stat-label">TIME</span>
+                <span id="time" class="stat-value">60s</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <span class="stat-label">SCORE</span>
+                <span id="score" class="stat-value text-green-400">0</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <span class="stat-label">DISTANCE</span>
+                <span id="distance" class="stat-value">0 m</span>
+            </div>
+        </div>
+    
+        <div id="canvas-wrapper">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+    
+        <div class="text-center p-3 rounded bg-gray-800 border-b-4 border-yellow-400">
+            <div id="questionDisplay" class="text-3xl font-bold text-white mb-2">
+                Tap START
+            </div>
+            <div id="feedback" class="h-6 text-lg font-semibold correct-message"></div>
+        </div>
+    
+        <div class="flex flex-col gap-2">
+            <input type="text" id="answerInput" placeholder="Answer" class="rounded p-2" readonly>
+            <div id="keypad" class="grid grid-cols-4 gap-2">
+                <button class="keypad-button" data-key="7">7</button>
+                <button class="keypad-button" data-key="8">8</button>
+                <button class="keypad-button" data-key="9">9</button>
+                <button class="keypad-button action-button" data-key="backspace">←</button>
+
+                <button class="keypad-button" data-key="4">4</button>
+                <button class="keypad-button" data-key="5">5</button>
+                <button class="keypad-button" data-key="6">6</button>
+                <button class="keypad-button action-button" data-key="sign">+/-</button>
+
+                <button class="keypad-button" data-key="1">1</button>
+                <button class="keypad-button" data-key="2">2</button>
+                <button class="keypad-button" data-key="3">3</button>
+                <button id="submitButton" class="keypad-button action-button col-span-1 row-span-2" data-key="submit" style="background-color: #3fb950; box-shadow: 0 4px #2b8438;">
+                    START
+                </button>
+
+                <button class="keypad-button col-span-2" data-key="0">0</button>
+                <button class="keypad-button" data-key="." data-disabled="true" style="opacity: 0.5;">.</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="menuScreen" class="hidden flex-col gap-3 py-4">
+        <h2 class="text-xl font-bold text-blue-400 text-center">SELECT MODE</h2>
+        <p class="text-sm text-yellow-400 text-center">Playing as: <span id="currentUserName">Guest</span></p>
+        <button class="mode-button" data-mode="ADDITION">ADDITION</button>
+        <button class="mode-button" data-mode="SUBTRACTION">SUBTRACTION</button>
+        <button class="mode-button" data-mode="MULTIPLICATION">MULTIPLICATION</button>
+        <button class="mode-button" data-mode="DIVISION">DIVISION</button>
+        <button class="mode-button bg-red-500 border-white" data-mode="INTEGERS">
+            INTEGERS (Mixed)
+        </button>
+    </div>
+
+
+    <div id="gameOverModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center p-4 z-10">
+        <div class="bg-gray-700 p-6 rounded-xl shadow-2xl text-center w-full max-w-sm">
+            <h2 class="text-3xl font-extrabold text-red-500 mb-4">GAME OVER!</h2>
+            <p class="text-lg text-gray-200 mb-2">Score saved!</p>
+            <p class="text-xl font-bold text-yellow-400 mb-4">Final Score: <span id="finalScore">0</span></p>
+            <p class="text-md text-gray-300 mb-6">Distance Traveled: <span id="finalDistance">0 m</span></p>
+            <button id="restartButton" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-150 shadow-md">
+                PLAY AGAIN
+            </button>
+            <button id="backToMenuButton" class="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-150 shadow-md">
+                MAIN MENU
+            </button>
+        </div>
+    </div>
+
+    <div class="mt-4 p-3 rounded bg-gray-800/50">
+        <div class="flex flex-wrap justify-center gap-2 mb-3 bg-gray-700 p-2 rounded">
+            <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="OVERALL">Overall</button>
+            <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="ADDITION">Addition</button>
+            <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="SUBTRACTION">Subtraction</button>
+            <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="MULTIPLICATION">Multiplication</button>
+            <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="DIVISION">Division</button>
+            <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="INTEGERS">Mixed Int</button>
+        </div>
+
+        <h3 id="leaderboardTitle" class="text-lg font-bold text-blue-400 mb-2 border-b border-blue-400/50">Top Dashers (Overall)</h3>
+        <div id="leaderboard" class="text-sm">
+            <div class="leaderboard-item font-bold text-gray-400">
+                <span>#</span>
+                <span>Player</span>
+                <span>Score</span>
+            </div>
+            <div id="leaderboardList">
+                <p class="text-center py-2 text-gray-500">Loading scores...</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+    // Firebase Imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, where, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    
+    // --- Firebase Setup ---
+    let app, db, auth, userId = null;
+    let userName = "Guest"; // New: Stores the player's entered name
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    
+    // Fallback Public Firebase Config (Replace these placeholders with your actual project keys)
+    // NOTE: You must replace "YOUR_PROJECT_ID" and other placeholders with your actual FIREBASE PROJECT CONFIG!
+    const PUBLIC_FIREBASE_CONFIG = {
+        apiKey: "AIzaSyDRmaI9bZXdQ_IQDV-AfLb0cHxTQx15DJc",
+        authDomain: "math-dash-f377d.firebaseapp.com",
+        projectId: "math-dash-f377d",
+        storageBucket: "math-dash-f377d.firebasestorage.app",
+        messagingSenderId: "96602470442",
+        appId: "1:96602470442:web:55cd87dd1bb0ed032e2b53",
+        measurementId: "G-50YS8K8BQM"
+    };
+    
+    // Use the injected config if available, otherwise use the public fallback
+    let firebaseConfig = null;
+    try {
+        // This attempts to get the config from the hosting environment (if available)
+        firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : PUBLIC_FIREBASE_CONFIG;
+    } catch (e) {
+        // If parsing fails, fall back to the manually edited public config
+        firebaseConfig = PUBLIC_FIREBASE_CONFIG;
+    }
+    
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    const SCORE_COLLECTION_PATH = `artifacts/${appId}/public/data/math_dash_scores`;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
+
+
+    // Constants and Game Configuration
+    const CANVAS = document.getElementById('gameCanvas');
+    const CTX = CANVAS.getContext('2d');
+    const CANVAS_WRAPPER = document.getElementById('canvas-wrapper');
+    const QUESTION_DISPLAY = document.getElementById('questionDisplay');
+    const ANSWER_INPUT = document.getElementById('answerInput');
+    const FEEDBACK = document.getElementById('feedback');
+    const SCORE_ELEM = document.getElementById('score');
+    const TIME_ELEM = document.getElementById('time');
+    const DISTANCE_ELEM = document.getElementById('distance');
+    const SUBMIT_BUTTON = document.getElementById('submitButton');
+    const GAME_OVER_MODAL = document.getElementById('gameOverModal');
+    const RESTART_BUTTON = document.getElementById('restartButton');
+    const BACK_TO_MENU_BUTTON = document.getElementById('backToMenuButton');
+    const USER_ID_DISPLAY = document.getElementById('userIdDisplay');
+    const USER_ID_CONTAINER = document.getElementById('userIdContainer');
+    const COPY_FEEDBACK = document.getElementById('copyFeedback');
+    const COPY_ICON = document.getElementById('copyIcon');
+    const LEADERBOARD_LIST = document.getElementById('leaderboardList');
+    const LEADERBOARD_TITLE = document.getElementById('leaderboardTitle');
+    const MENU_SCREEN = document.getElementById('menuScreen');
+    const GAME_SCREEN = document.getElementById('gameScreen');
+    const USER_INPUT_SCREEN = document.getElementById('userInputScreen');
+    const USER_NAME_INPUT = document.getElementById('userNameInput');
+    const SIGN_IN_BUTTON = document.getElementById('signInButton');
+    const AUTH_MESSAGE = document.getElementById('authMessage');
+    const CURRENT_USER_NAME_DISPLAY = document.getElementById('currentUserName');
+    const FILTER_BUTTONS = document.querySelectorAll('.leaderboard-filter-btn');
+
+    // Game State
+    let gameState = {
+        isRunning: false,
+        score: 0,
+        time: 0,
+        distance: 0,
+        question: null,
+        correctAnswer: null,
+        mode: null,
+        baseCarSpeed: 2,
+        dashSpeed: 10,
+        currentCarSpeed: 2,
+        maxNumber: 10,
+        laneOffset: 0,
+        laneLineLength: 50,
+        laneGap: 70,
+        feedbackTimer: null,
+        gameInterval: null,
+        timeLimit: 60,
+        isAuthReady: false,
+        canvasWidth: 400,
+        canvasHeight: 400,
+        shakeOffset: 0,
+        shakeIntensity: 5,
+        flashOpacity: 0,
+        currentFilter: 'OVERALL', 
+        bgImage: null,
+        bgImageLoaded: false,
+        bgImageY: 0,
+        // NEW: Live data for competitors
+        competitors: [] 
+    };
+
+    // --- Firebase Listeners and Competition Logic ---
+    let unsubscribeCompetitors = null;
+
+    /**
+     * Starts a real-time listener for the top scores in the current game mode 
+     * to visualize competitors on the track.
+     */
+    function startCompetitorListener() {
+        if (!db || !gameState.mode) return;
+        
+        // Clear previous listener
+        if (unsubscribeCompetitors) {
+            unsubscribeCompetitors();
+        }
+
+        const mode = gameState.mode;
+        // Query for scores in the current mode, ordered by distance (to track who is ahead)
+        const competitorsQuery = query(
+            collection(db, SCORE_COLLECTION_PATH),
+            where("mode", "==", mode),
+            orderBy("distance", "desc"),
+            limit(5) 
+        );
+
+        unsubscribeCompetitors = onSnapshot(competitorsQuery, (snapshot) => {
+            let topCompetitors = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                // Filter out the current user and any scores without user info
+                if (data.userId && data.userId !== userId) {
+                    topCompetitors.push({
+                        userName: data.userName || 'Racer',
+                        distance: data.distance || 0,
+                        userId: data.userId
+                    });
+                }
+            });
+            // Update the game state with the competitors
+            gameState.competitors = topCompetitors.slice(0, 4); 
+        }, (error) => {
+            console.error("Error fetching live competitors:", error);
+        });
+    }
+
+    /**
+     * Stops the real-time competitor listener.
+     */
+    function stopCompetitorListener() {
+        if (unsubscribeCompetitors) {
+            unsubscribeCompetitors();
+            unsubscribeCompetitors = null;
+        }
+        gameState.competitors = [];
+    }
+
+
+    // Load background image
+    const backgroundImage = new Image();
+    backgroundImage.onload = () => {
+        gameState.bgImageLoaded = true;
+        // Draw static screen immediately after load if we are on menu/input
+        if (!gameState.isRunning) {
+            drawStaticScreen();
+        }
+    };
+    backgroundImage.onerror = () => {
+        console.error("Failed to load background image.");
+    };
+    // CRUCIAL FIX: Use '../' to step up one directory level from 'public' to reach 'bg_image.jpg'
+    backgroundImage.src = '../bg_image.jpg'; 
+
+
+    /**
+     * Toggles between different app views.
+     */
+    function setView(view) {
+        USER_INPUT_SCREEN.classList.add('hidden');
+        MENU_SCREEN.classList.add('hidden');
+        GAME_SCREEN.classList.add('hidden');
+        GAME_OVER_MODAL.classList.add('hidden');
+        
+        if (view === 'input') {
+            USER_INPUT_SCREEN.classList.remove('hidden');
+        } else if (view === 'menu') {
+            MENU_SCREEN.classList.remove('hidden');
+            CURRENT_USER_NAME_DISPLAY.textContent = userName;
+        } else if (view === 'game') {
+            GAME_SCREEN.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * Handles the "Sign In" button click by setting the player name.
+     */
+    function handleSignIn() {
+        const inputName = USER_NAME_INPUT.value.trim();
+        if (inputName.length < 3) {
+            AUTH_MESSAGE.textContent = "Name must be 3-15 characters.";
+            return;
+        }
+        
+        userName = inputName;
+        localStorage.setItem('mathDashUserName', userName);
+        
+        AUTH_MESSAGE.textContent = "";
+        setView('menu');
+        showMenu(); // Ensure canvas redraws correctly
+    }
+    
+    /**
+     * Shows the main menu and hides the game screen.
+     */
+    function showMenu() {
+        setView('menu');
+        gameState.isRunning = false;
+        if (gameState.gameInterval) clearInterval(gameState.gameInterval);
+        if (gameState.timeLimitInterval) clearInterval(gameState.timeLimitInterval);
+        stopCompetitorListener(); // NEW: Stop listening for competitors
+        drawStaticScreen(); // Redraw menu screen style on canvas
+    }
+    
+    /**
+     * Initializes Firebase and authenticates the user.
+     */
+    async function initFirebase() {
+        // Load stored name if available
+        const storedName = localStorage.getItem('mathDashUserName');
+        if (storedName) {
+            userName = storedName;
+            USER_NAME_INPUT.value = storedName;
+            SIGN_IN_BUTTON.textContent = `CONTINUE AS ${storedName.toUpperCase()}`;
+            AUTH_MESSAGE.textContent = "Welcome back!";
+        } else {
+            SIGN_IN_BUTTON.textContent = `PLAY AS GUEST`;
+        }
+
+        // Check if config is available (now using the public fallback if __firebase_config is missing)
+        if (!firebaseConfig.projectId || firebaseConfig.projectId === "YOUR_PROJECT_ID") {
+            console.error("Firebase config is missing or using placeholders. Scoreboard disabled.");
+            USER_ID_DISPLAY.textContent = "OFFLINE MODE";
+            AUTH_MESSAGE.textContent = "Running in Offline/Local Mode. (Update Project ID!)";
+            setView('input');
+            return;
+        }
+
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            AUTH_MESSAGE.textContent = "Connecting to competition server...";
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    USER_ID_DISPLAY.textContent = userId;
+                    gameState.isAuthReady = true;
+                    AUTH_MESSAGE.textContent = "Ready to Dash!";
+                    loadHighScores(); // Load initial OVERALL scores
+                } else {
+                    userId = null;
+                    USER_ID_DISPLAY.textContent = "Unauthenticated";
+                    gameState.isAuthReady = true;
+                    AUTH_MESSAGE.textContent = "Authentication required to post score.";
+                    loadHighScores(); // Load initial OVERALL scores
+                }
+            });
+
+            // Always try to sign in anonymously for persistent ID
+            const token = initialAuthToken || "";
+            if (token && token !== "YOUR_INITIAL_AUTH_TOKEN") {
+                await signInWithCustomToken(auth, initialAuthToken);
+            } else {
+                await signInAnonymously(auth);
+            }
+            
+            // Initial view is the input screen
+            setView('input');
+
+        } catch (error) {
+            console.error("Firebase Initialization or Authentication failed:", error);
+            USER_ID_DISPLAY.textContent = "Auth Error";
+            AUTH_MESSAGE.textContent = "Error connecting to Firebase. Check console.";
+            gameState.isAuthReady = true;
+            setView('input');
+        }
+    }
+    
+    /**
+     * Copies the current User ID to the clipboard and provides visual feedback.
+     */
+    function copyUserIdToClipboard() {
+        if (!userId || userId === "Loading..." || userId === "Auth Error") {
+            return;
+        }
+
+        // Use the older execCommand('copy') for better iframe compatibility
+        const tempInput = document.createElement('textarea');
+        tempInput.value = userId;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        try {
+            document.execCommand('copy');
+            COPY_FEEDBACK.classList.remove('hidden');
+            COPY_ICON.classList.add('hidden');
+            setTimeout(() => {
+                COPY_FEEDBACK.classList.add('hidden');
+                COPY_ICON.classList.remove('hidden');
+            }, 2000);
+        } catch (err) {
+            console.error('Could not copy text: ', err);
+            // Fallback for user if copy fails
+            alert("Copy failed. Your Firebase ID is: " + userId);
+        } finally {
+            document.body.removeChild(tempInput);
+        }
+    }
+
+
+    // --- Firestore Score and Leaderboard Functions ---
+
+    async function saveScore(score, distance) {
+        if (!gameState.isAuthReady || !db || !userId) {
+            console.warn("Authentication not ready or DB not initialized. Score not saved.");
+            return;
+        }
+        
+        try {
+            await addDoc(collection(db, SCORE_COLLECTION_PATH), {
+                userId: userId,
+                userName: userName, // Save the player's chosen name
+                score: score,
+                distance: parseFloat(distance.toFixed(1)),
+                mode: gameState.mode,
+                timestamp: serverTimestamp(),
+            });
+            console.log("Score saved successfully!");
+        } catch (error) {
+            console.error("Error saving score:", error);
+        }
+    }
+
+    /**
+     * Loads and displays the top 10 high scores based on the current filter/mode.
+     */
+    let unsubscribeLeaderboard = null;
+
+   function loadHighScores(modeFilter = gameState.currentFilter) {
+        if (!db) return;
+
+        // If a listener already exists, unsubscribe it before setting up a new one
+        if (unsubscribeLeaderboard) {
+            unsubscribeLeaderboard();
+            unsubscribeLeaderboard = null;
+        }
+
+        // Update title immediately
+        if (modeFilter !== 'OVERALL') {
+            LEADERBOARD_TITLE.textContent = `Top Dashers (${modeFilter})`;
+        } else {
+            LEADERBOARD_TITLE.textContent = `Top Dashers (Overall)`;
+        }
+        
+        // Update button visual state
+        FILTER_BUTTONS.forEach(btn => {
+            btn.classList.remove('leaderboard-filter-active');
+            if (btn.dataset.filter === modeFilter) {
+                btn.classList.add('leaderboard-filter-active');
+            }
+        });
+
+        // Fetch ALL scores without any orderBy or where clauses to avoid index requirements
+        let scoresQuery = collection(db, SCORE_COLLECTION_PATH);
+
+        // Assign the unsubscribe function to the global variable
+        unsubscribeLeaderboard = onSnapshot(scoresQuery, (snapshot) => {
+            attempts = 0; // Reset attempts on successful snapshot update
+            let scores = [];
+            snapshot.forEach(doc => {
+                scores.push(doc.data());
+            });
+
+            // Filter by mode if not OVERALL (do this in JavaScript to avoid needing composite index)
+            if (modeFilter !== 'OVERALL') {
+                scores = scores.filter(score => score.mode === modeFilter);
+            }
+
+            // Sort by score (primary, desc) and then distance (secondary, desc)
+            scores.sort((a, b) => {
+                if (b.score !== a.score) {
+                    return b.score - a.score;
+                }
+                return b.distance - a.distance;
+            });
+
+            // Limit to top 10
+            scores = scores.slice(0, 10);
+
+            renderLeaderboard(scores);
+        }, (error) => {
+            console.error("Error fetching leaderboard:", error);
+            
+            // Check for permission error and trigger retry mechanism
+            if (error.code === 'permission-denied' && attempts < MAX_ATTEMPTS) {
+                attempts++;
+                const delay = Math.pow(2, attempts) * 1000;
+                console.log(`Retrying leaderboard load in ${delay / 1000}s (Attempt ${attempts}/${MAX_ATTEMPTS})...`);
+                
+                // CRUCIAL: Unsubscribe the current failing listener instance 
+                if (unsubscribeLeaderboard) {
+                    unsubscribeLeaderboard();
+                    unsubscribeLeaderboard = null;
+                }
+
+                setTimeout(() => {
+                    // Reset attempts before the recursive call to prevent double increment/timeout
+                    attempts = 0;
+                    loadHighScores(modeFilter); 
+                }, delay);
+                
+                LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-yellow-400">Loading scores... (Retrying)</p>`;
+            } else {
+                LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-red-400">Error loading scores. Check permissions or network.</p>`;
+            }
+        });
+    }
+
+    function renderLeaderboard(scores) {
+        LEADERBOARD_LIST.innerHTML = '';
+        if (scores.length === 0) {
+            LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-gray-500">No scores yet for this category. Be the first!</p>`;
+            return;
+        }
+
+        scores.forEach((data, index) => {
+            const item = document.createElement('div');
+            item.className = 'leaderboard-item';
+            
+            // Use the stored userName if available, otherwise fall back to truncated userId
+            const displayUser = data.userName || (data.userId ? data.userId.substring(0, 10) + '...' : 'Unknown');
+            
+            item.innerHTML = `
+                <span class="text-yellow-400">${index + 1}</span>
+                <span title="${data.userId}">${displayUser}</span>
+                <span class="font-bold text-green-400">${data.score} </span>
+            `;
+            LEADERBOARD_LIST.appendChild(item);
+        });
+    }
+
+    // --- Game Logic Functions ---
+
+    /**
+     * Generates a random integer problem based on the selected mode.
+     */
+    function generateIntegerProblem(max, mode) {
+        const range = Math.max(5, max);
+        
+        let ops;
+        if (mode === 'INTEGERS') {
+            ops = ['+', '-', '*', '/'];
+        } else if (mode === 'ADDITION') {
+            ops = ['+'];
+        } else if (mode === 'SUBTRACTION') {
+            ops = ['-'];
+        } else if (mode === 'MULTIPLICATION') {
+            ops = ['*'];
+        } else if (mode === 'DIVISION') {
+            ops = ['/'];
+        } else {
+            ops = ['+', '-', '*', '/'];
+        }
+        
+        const op = ops[Math.floor(Math.random() * ops.length)];
+
+        let num1, num2, answer, problem;
+
+        do {
+            num1 = Math.floor(Math.random() * (2 * range + 1)) - range;
+            num2 = Math.floor(Math.random() * (2 * range + 1)) - range;
+            if (num1 === 0) num1 = 1;
+            if (num2 === 0) num2 = 1;
+
+            if (op === '+') {
+                answer = num1 + num2;
+                problem = `${num1} + ${num2}`;
+            } else if (op === '-') {
+                answer = num1 - num2;
+                problem = `${num1} - ${num2}`;
+            } else if (op === '*') {
+                const m_range = Math.min(12, range);
+                num1 = Math.floor(Math.random() * (2 * m_range + 1)) - m_range;
+                num2 = Math.floor(Math.random() * (2 * m_range + 1)) - m_range;
+                answer = num1 * num2;
+                problem = `${num1} × ${num2}`;
+            } else if (op === '/') {
+                const d_range = Math.min(10, range); 
+                
+                let divisor = Math.floor(Math.random() * (2 * d_range + 1)) - d_range;
+                while (divisor === 0) {
+                    divisor = Math.floor(Math.random() * (2 * d_range + 1)) - d_range;
+                }
+                
+                answer = Math.floor(Math.random() * (2 * d_range + 1)) - d_range;
+                num1 = answer * divisor;
+                num2 = divisor;
+                
+                problem = `${num1} ÷ ${num2}`;
+            }
+        } while (Math.abs(answer) > 100 || Math.abs(num1) > 100 || Math.abs(num2) > 100);
+
+        return { problem: problem, answer: answer };
+    }
+
+    /** Draws the entire road scene including the car and lines. */
+    function draw() {
+        if (!gameState.isRunning) {
+            drawStaticScreen();
+            return;
+        }
+        
+        const W = CANVAS.width;
+        const H = CANVAS.height;
+
+        // Apply shake offset if dashing
+        const shakeX = gameState.shakeOffset > 0 ? (Math.random() * gameState.shakeOffset * 2) - gameState.shakeOffset : 0;
+        const shakeY = gameState.shakeOffset > 0 ? (Math.random() * gameState.shakeOffset * 2) - gameState.shakeOffset : 0;
+
+        // Decrease shake for next frame
+        gameState.shakeOffset = Math.max(0, gameState.shakeOffset - 0.5); 
+        
+        // 1. Clear Canvas
+        CTX.clearRect(0, 0, W, H);
+
+        // 2. Draw Background Image (Road/Sky) - Scrolling effect
+        if (backgroundImage.complete && gameState.bgImageLoaded) {
+            // Calculate a single background image height based on its aspect ratio
+            const bgImageAspect = backgroundImage.height / backgroundImage.width;
+            const bgImageH = W * bgImageAspect;
+            
+            // Draw the image, shifted by bgImageY, which scrolls downward (positive speed)
+            // Draw one image to fill the canvas, and a second one seamlessly above it
+            CTX.drawImage(backgroundImage, 0, gameState.bgImageY, W, bgImageH);
+            CTX.drawImage(backgroundImage, 0, gameState.bgImageY - bgImageH, W, bgImageH);
+
+            // Update scrolling position
+            // Reset position when the first image has scrolled completely off screen
+            gameState.bgImageY = (gameState.bgImageY + gameState.currentCarSpeed) % bgImageH;
+        } else {
+             // Fallback: Draw Road (Dark Gray)
+            CTX.fillStyle = '#30363d';
+            CTX.fillRect(0, 0, W, H);
+            
+            // Fallback: Draw Center Line 
+            CTX.fillStyle = '#ffffff'; 
+            const centerLineX = W / 2 - (W * 0.0125); 
+            const lineWidth = W * 0.025; 
+            const lineOffset = gameState.laneOffset % (gameState.laneLineLength + gameState.laneGap);
+
+            for (let y = -gameState.laneLineLength + lineOffset + shakeY; y < H + shakeY; y += (gameState.laneLineLength + gameState.laneGap)) {
+                CTX.fillRect(centerLineX + shakeX, y, lineWidth, gameState.laneLineLength);
+            }
+            // Update lane offset for fallback animation
+            gameState.laneOffset += gameState.currentCarSpeed;
+        }
+        
+        // 3. Apply brief flash effect if dashing after correct answer
+        if (gameState.flashOpacity > 0) {
+            CTX.fillStyle = `rgba(255, 255, 255, ${gameState.flashOpacity})`; // White/Yellow flash
+            CTX.fillRect(0, 0, W, H);
+            gameState.flashOpacity = Math.max(0, gameState.flashOpacity - 0.1); // Fade quickly
+        }
+        
+        // 4. Draw Competitor Cars (NEW FEATURE)
+        if (gameState.competitors.length > 0) {
+            const enemyCarW = W * 0.08; 
+            const enemyCarH = H * 0.07; 
+            // Lane positions: Left, Middle-Left, Middle-Right, Right
+            const laneOffsets = [W * 0.1, W * 0.35, W * 0.60, W * 0.85];
+
+            gameState.competitors.forEach((competitor, index) => {
+                // Calculate position based on competitor distance vs. player distance.
+                const distDiff = competitor.distance - gameState.distance; 
+                
+                // Scale distance difference to screen pixel position (10 pixels per meter difference)
+                const yOffset = distDiff * 10; 
+
+                // Place the enemy car relative to the bottom of the screen
+                let enemyY = H - (H * 0.3) - yOffset; // Start drawing enemies from about 30% up
+                
+                // Don't draw if too far off screen (more than 1 car length off the top/bottom)
+                if (enemyY < -enemyCarH || enemyY > H) return;
+                
+                const enemyX = laneOffsets[index % laneOffsets.length] - enemyCarW / 2;
+
+                const enemyDrawX = enemyX + shakeX * 0.2;
+                const enemyDrawY = enemyY + shakeY * 0.2;
+
+                // Draw Car Body (Red/Opponent Color)
+                CTX.fillStyle = '#f85149'; 
+                CTX.fillRect(enemyDrawX, enemyDrawY, enemyCarW, enemyCarH);
+                
+                // Draw Name Tag
+                CTX.fillStyle = '#ffffff';
+                CTX.font = `${Math.floor(W * 0.025)}px Chivo Mono`;
+                CTX.textAlign = 'center';
+                CTX.fillText(competitor.userName.substring(0, 5), enemyDrawX + enemyCarW / 2, enemyDrawY - 5);
+            });
+        }
+        
+        // 5. Draw Speed Lines (Visual Dash Effect - Drawn on top of background)
+        if (gameState.currentCarSpeed > gameState.baseCarSpeed * 1.5) {
+            CTX.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            CTX.lineWidth = 2;
+            
+            // Draw 10 random speed lines rushing past the car
+            for (let i = 0; i < 10; i++) {
+                const lineX = Math.random() * W;
+                const lineStart = Math.random() * H;
+                const lineLength = gameState.currentCarSpeed * 3; // Length proportional to speed
+
+                CTX.beginPath();
+                CTX.moveTo(lineX, lineStart);
+                CTX.lineTo(lineX, lineStart + lineLength);
+                CTX.stroke();
+            }
+        }
+
+        // 6. Draw Player Car (Simple shape) - Always on top
+        const carW = W * 0.10; // 10% of width
+        const carH = H * 0.175; // 17.5% of height
+        const carX = W / 2 - carW / 2;
+        const carY = H - carH - (H * 0.075); // 7.5% from bottom
+
+        // Apply subtle shake to car position
+        const carDrawX = carX + shakeX * 0.5;
+        const carDrawY = carY + shakeY * 0.5;
+
+        // Main Car Body (Yellow)
+        CTX.fillStyle = '#f9d22d';
+        CTX.fillRect(carDrawX, carDrawY, carW, carH);
+        // Cabin (Black/Dark)
+        CTX.fillStyle = '#0d1117';
+        CTX.fillRect(carDrawX + carW * 0.1, carDrawY + carH * 0.2, carW * 0.8, carH * 0.5);
+        // Headlights (White/Bright)
+        CTX.fillStyle = '#ffffff';
+        CTX.fillRect(carDrawX, carDrawY + carH - (H * 0.0125), carW * 0.25, H * 0.0125);
+        CTX.fillRect(carDrawX + carW * 0.75, carDrawY + carH - (H * 0.0125), carW * 0.25, H * 0.0125);
+
+        // Car Number Display
+        CTX.fillStyle = '#f85149';
+        CTX.font = `${Math.floor(W * 0.045)}px Chivo Mono`;
+        CTX.textAlign = 'center';
+        CTX.fillText('#7', carDrawX + carW / 2, carDrawY + carH * 0.45);
+
+        // 7. Update Game State for Next Frame
+        updateGamePhysics();
+    }
+
+    /** Draws the initial or paused screen. */
+    function drawStaticScreen() {
+        const W = CANVAS.width;
+        const H = CANVAS.height;
+        
+        CTX.clearRect(0, 0, W, H);
+
+        // Use the background image even for the static screen if loaded
+        if (backgroundImage.complete && gameState.bgImageLoaded) {
+            // Draw a single instance of the background image, centered and covering the canvas
+            const scale = Math.max(W / backgroundImage.width, H / backgroundImage.height);
+            const x = (W / 2) - (backgroundImage.width / 2) * scale;
+            const y = (H / 2) - (backgroundImage.height / 2) * scale;
+            const width = backgroundImage.width * scale;
+            const height = backgroundImage.height * scale;
+            CTX.drawImage(backgroundImage, x, y, width, height);
+
+            // Add a subtle dark blue overlay for contrast with text
+            // MODIFIED: Reduced opacity to 0.4 to ensure the dark image is clearly visible
+            CTX.fillStyle = 'rgba(0, 30, 60, 0.4)'; 
+            CTX.fillRect(0, 0, W, H);
+        } else {
+            // Fallback
+            CTX.fillStyle = '#161b22';
+            CTX.fillRect(0, 0, W, H);
+        }
+        
+        CTX.fillStyle = '#58a6ff';
+        CTX.font = `${Math.floor(W * 0.075)}px Luckiest Guy`;
+        CTX.textAlign = 'center';
+        CTX.fillText('MATH DASH', W / 2, H / 2 - 20);
+
+        CTX.fillStyle = '#c9d1d9';
+        CTX.font = `${Math.floor(W * 0.04)}px Chivo Mono`;
+        CTX.fillText('Select a mode to start racing!', W / 2, H / 2 + 20);
+        CTX.fillText(`Player: ${userName}`, W / 2, H / 2 + 50);
+    }
+
+    function updateGamePhysics() {
+        if (!gameState.isRunning) return;
+        
+        // This simulates the distance traveled in this session (player's progress)
+        gameState.distance += gameState.currentCarSpeed / 10;
+        DISTANCE_ELEM.textContent = `${Math.floor(gameState.distance)} m`;
+
+        // Decay speed back to base speed
+        gameState.currentCarSpeed = Math.max(gameState.baseCarSpeed, gameState.currentCarSpeed - 0.1); 
+        
+        // OPTIONAL: PUSH CURRENT DISTANCE TO FIREBASE PERIODICALLY (e.g., every 5 seconds)
+        // This requires updating your Firestore security rules to allow updates to the current score/distance document
+        // The current implementation saves the final score only on game end.
+    }
+
+    /**
+     * Starts the game with the current mode.
+     */
+    function startGame(mode) {
+        if (!mode) return showMenu();
+
+        // Switch to game screen
+        setView('game');
+        GAME_OVER_MODAL.classList.add('hidden');
+        
+        // Reset state
+        gameState.isRunning = true;
+        gameState.score = 0;
+        gameState.time = 0;
+        gameState.distance = 0;
+        gameState.maxNumber = 10;
+        gameState.mode = mode; // Set the selected mode
+        gameState.dashSpeed = 10; 
+        gameState.currentCarSpeed = gameState.baseCarSpeed;
+        gameState.shakeOffset = 0; // Reset shake
+        gameState.flashOpacity = 0; // Reset flash
+        gameState.bgImageY = 0; // Reset background scroll position
+        
+        SCORE_ELEM.textContent = gameState.score;
+        TIME_ELEM.textContent = `${gameState.timeLimit}s`;
+        DISTANCE_ELEM.textContent = `${Math.floor(gameState.distance)} m`;
+        
+        ANSWER_INPUT.value = '';
+        FEEDBACK.textContent = '';
+        SUBMIT_BUTTON.textContent = 'SUBMIT';
+        SUBMIT_BUTTON.style.backgroundColor = '#58a6ff';
+        SUBMIT_BUTTON.style.boxShadow = '0 4px #448ccf';
+
+        // Clear existing intervals
+        if (gameState.gameInterval) clearInterval(gameState.gameInterval);
+        
+        gameState.gameInterval = setInterval(gameLoop, 1000 / 60);
+
+        if (gameState.timeLimitInterval) clearInterval(gameState.timeLimitInterval);
+        gameState.timeLimitInterval = setInterval(updateTime, 1000);
+
+        newQuestion();
+        startCompetitorListener(); // NEW: Start listening for competitors in this mode
+    }
+
+    function gameLoop() {
+        if (!gameState.isRunning) return;
+        draw();
+    }
+
+    function updateTime() {
+        if (!gameState.isRunning) return;
+        
+        gameState.time++;
+        const remainingTime = gameState.timeLimit - gameState.time;
+        TIME_ELEM.textContent = `${remainingTime}s`;
+
+        if (remainingTime <= 0) {
+            endGame();
+        }
+    }
+
+    /**
+     * Generates and displays a new question based on the selected mode.
+     */
+    function newQuestion() {
+        if (gameState.score > 0 && gameState.score % 5 === 0) {
+            gameState.maxNumber += 5; 
+            if (gameState.maxNumber > 30) gameState.maxNumber = 30;
+        }
+
+        // Use the current mode for question generation
+        // NOTE: For true synchronization, this function should read a new question 
+        // from a shared Firestore document rather than generating locally.
+        gameState.question = generateIntegerProblem(gameState.maxNumber, gameState.mode);
+        gameState.correctAnswer = gameState.question.answer;
+        QUESTION_DISPLAY.textContent = `${gameState.question.problem} = ?`;
+        ANSWER_INPUT.value = '';
+    }
+
+    function checkAnswer() {
+        if (!gameState.isRunning) {
+            // If game is paused on the game screen, tapping SUBMIT acts as START
+            startGame(gameState.mode);
+            return;
+        }
+
+        const userAnswer = parseInt(ANSWER_INPUT.value.trim());
+
+        if (isNaN(userAnswer)) {
+            showFeedback("Please enter a number.", 'incorrect-message');
+            return;
+        }
+
+        if (userAnswer === gameState.correctAnswer) {
+            // SUCCESS: Apply Dash effect
+            gameState.currentCarSpeed = gameState.dashSpeed;
+            gameState.shakeOffset = gameState.shakeIntensity; // Activate shake
+            gameState.flashOpacity = 1; // Activate immediate flash
+            gameState.score++;
+            SCORE_ELEM.textContent = gameState.score;
+            showFeedback("CORRECT! DASH!", 'correct-message');
+            newQuestion();
+        } else {
+            // FAILURE: Apply minor slow down and feedback
+            gameState.currentCarSpeed = Math.max(1, gameState.currentCarSpeed - 1);
+            showFeedback("INCORRECT. Try again.", 'incorrect-message');
+        }
+        
+        ANSWER_INPUT.value = '';
+    }
+
+    function showFeedback(message, className) {
+        if (gameState.feedbackTimer) clearTimeout(gameState.feedbackTimer);
+        FEEDBACK.className = `h-6 text-lg font-semibold ${className}`;
+        FEEDBACK.textContent = message;
+
+        gameState.feedbackTimer = setTimeout(() => {
+            FEEDBACK.textContent = '';
+        }, 1500);
+    }
+
+    function endGame() {
+        gameState.isRunning = false;
+        clearInterval(gameState.gameInterval);
+        clearInterval(gameState.timeLimitInterval);
+        
+        saveScore(gameState.score, gameState.distance);
+        stopCompetitorListener(); // NEW: Stop listening for competitors
+        
+        document.getElementById('finalScore').textContent = gameState.score;
+        document.getElementById('finalDistance').textContent = `${Math.floor(gameState.distance)} m`;
+
+        GAME_OVER_MODAL.classList.remove('hidden');
+        
+        SUBMIT_BUTTON.textContent = 'START';
+        SUBMIT_BUTTON.style.backgroundColor = '#3fb950';
+        SUBMIT_BUTTON.style.boxShadow = '0 4px #2b8438';
+        
+        QUESTION_DISPLAY.textContent = 'Time\'s Up!';
+        ANSWER_INPUT.value = '';
+    }
+
+
+    // --- Event Listeners and Initialization ---
+    
+    function resizeCanvas() {
+        const width = CANVAS_WRAPPER.clientWidth;
+        CANVAS.width = width;
+        CANVAS.height = width;
+
+        gameState.canvasWidth = width;
+        gameState.canvasHeight = width;
+
+        if (gameState.isRunning) {
+            draw();
+        } else {
+            drawStaticScreen();
+        }
+    }
+
+
+    function handleKeypadPress(event) {
+        const key = event.target.dataset.key;
+        if (!key) return;
+        
+        const input = ANSWER_INPUT;
+        
+        if (key === 'submit') {
+            checkAnswer();
+        } else if (key === 'backspace') {
+            input.value = input.value.slice(0, -1);
+        } else if (key === 'sign') {
+            if (input.value.startsWith('-')) {
+                input.value = input.value.substring(1);
+            } else if (input.value.length > 0 && input.value !== '0') {
+                input.value = '-' + input.value;
+            }
+        } else if (key >= '0' && key <= '9') {
+            if (input.value.length < 6) {
+                input.value += key;
+            }
+        }
+    }
+
+    /**
+     * Initialize the application.
+     */
+    window.onload = function() {
+        initFirebase();
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // --- Event Listeners ---
+        document.getElementById('keypad').addEventListener('click', handleKeypadPress);
+        RESTART_BUTTON.addEventListener('click', () => startGame(gameState.mode));
+        BACK_TO_MENU_BUTTON.addEventListener('click', showMenu);
+        USER_ID_CONTAINER.addEventListener('click', copyUserIdToClipboard);
+        SIGN_IN_BUTTON.addEventListener('click', handleSignIn);
+        USER_NAME_INPUT.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleSignIn();
+        });
+
+        // Menu button listeners
+        document.querySelectorAll('.mode-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                startGame(e.target.dataset.mode);
+            });
+        });
+        
+        // Leaderboard filter listeners
+        document.querySelectorAll('.leaderboard-filter-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const filter = e.target.dataset.filter;
+                gameState.currentFilter = filter;
+                loadHighScores(filter);
+            });
+        });
+
+        ANSWER_INPUT.addEventListener('keydown', (e) => {
+            e.preventDefault();
+            if (e.key === 'Enter') checkAnswer();
+        });
+        
+        // Start on the input screen initially, which leads to the menu
+        // setView('input'); // This is already called inside initFirebase
+    };
+
+</script>
+</body>
+</html>

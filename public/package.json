@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "firebase": "^12.6.0"
+  }
+}
