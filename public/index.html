@@ -2,28 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Dash: Integer Racing Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="description" content="Master the Basic Operations & Integers - A fun math racing game!">
+    
+    <title>MRace: Math Dash</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom CSS for Game Aesthetics */
-        /* Using Luckiest Guy as it matches the bubble/comic font style from your images */
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Chivo+Mono:wght@400;700&display=swap');
         
         body {
             font-family: 'Chivo Mono', monospace;
-            background-color: #0d1117; /* Dark background */
+            background-color: #0d1117; 
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             color: #e6e6fa;
             padding: 10px;
+            margin: 0;
         }
 
         .game-container {
             width: 100%;
-            max-width: 420px; /* Mobile first design */
+            max-width: 450px; 
             background-color: #161b22;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -32,126 +46,156 @@
             flex-direction: column;
             gap: 10px;
         }
+
+        /* Responsive adjustments for smaller screens */
+        @media screen and (max-width: 400px) {
+            .game-container {
+                padding: 8px;
+                gap: 8px;
+            }
+            
+            body {
+                padding: 5px;
+            }
+        }
+
+        /* Responsive adjustments for larger tablets */
+        @media screen and (min-width: 600px) {
+            .game-container {
+                max-width: 500px;
+            }
+        }
+
+        /* Landscape mode adjustments */
+        @media screen and (orientation: landscape) and (max-height: 500px) {
+            body {
+                min-height: auto;
+                padding: 5px;
+            }
+            
+            .game-container {
+                padding: 8px;
+                gap: 8px;
+            }
+        }
         
-        /* Game Title Style based on "PLAY" image */
         .game-title {
             font-family: 'Luckiest Guy', cursive;
             text-shadow: 2px 2px 0 #0d1117, -2px -2px 0 #0d1117, 2px -2px 0 #0d1117, -2px 2px 0 #0d1117;
             letter-spacing: 2px;
+            font-size: clamp(2rem, 8vw, 2.5rem);
         }
 
-        /* --- MODE BUTTON STYLING (UPDATED FOR STARBURST/IMAGE LOOK) --- */
         .mode-button {
             font-family: 'Luckiest Guy', cursive;
-            background-color: #58a6ff; /* Light Blue/Teal background */
-            color: #0d1117; /* Dark text */
-            padding: 20px 15px; /* Increased padding to make room for shape */
+            background-color: #58a6ff; 
+            color: #0d1117; 
+            padding: clamp(15px, 4vw, 20px) clamp(12px, 3vw, 15px); 
             border-radius: 8px; 
-            font-size: 1.6rem; /* Slightly larger text */
+            font-size: clamp(1.2rem, 4vw, 1.6rem); 
             text-align: center;
             transition: transform 0.1s;
             cursor: pointer;
             margin: 5px;
             
-            /* Mimic the starburst/splat shape using clip-path */
             clip-path: polygon(
                 50% 0%, 60% 5%, 70% 0%, 80% 5%, 90% 0%, 100% 5%, 95% 40%, 100% 70%, 90% 95%, 80% 90%, 70% 100%, 60% 95%, 50% 100%, 40% 95%, 30% 100%, 20% 95%, 10% 100%, 0% 95%, 5% 60%, 0% 30%, 10% 5%, 20% 10%, 30% 0%, 40% 5%
             );
             
-            /* Layered shadows for depth and bubble effect, mimicking the image border */
-            border: 4px solid #ffffff; /* White border */
+            border: 4px solid #ffffff; 
             box-shadow: 
-                0 0 0 8px rgba(9, 30, 66, 0.4), /* Dark outline around the shape */
-                0 8px 0 #2b8438, /* Deep green 3D push down effect */
-                0 10px 15px rgba(0, 0, 0, 0.5); /* General drop shadow */
+                0 0 0 8px rgba(9, 30, 66, 0.4), 
+                0 8px 0 #2b8438, 
+                0 10px 15px rgba(0, 0, 0, 0.5); 
+        }
+
+        @media screen and (max-width: 350px) {
+            .mode-button {
+                font-size: 1.1rem;
+                padding: 12px 10px;
+            }
         }
 
         .mode-button:active {
-            transform: translateY(4px); /* Pushes down when clicked */
+            transform: translateY(4px); 
             box-shadow: 
                 0 0 0 8px rgba(9, 30, 66, 0.4),
-                0 4px 0 #2b8438, /* Reduced 3D push on press */
+                0 4px 0 #2b8438, 
                 0 5px 10px rgba(0, 0, 0, 0.5);
         }
 
-        /* Override red button style to match image design (red/orange look) */
         .mode-button.bg-red-500 {
-            background-color: #f85149; /* Red/Orange */
+            background-color: #f85149; 
         }
         .mode-button.bg-red-500:active {
             box-shadow: 
                 0 0 0 8px rgba(9, 30, 66, 0.4),
-                0 4px 0 #7c2d12, /* Darker red shadow for depth */
+                0 4px 0 #7c2d12, 
                 0 5px 10px rgba(0, 0, 0, 0.5);
         }
-        /* --- END MODE BUTTON STYLING --- */
-
-
-        /* Canvas for the Racing Track - Now uses 100% width and dynamic height */
-        #canvas-wrapper {
-            width: 100%;
-            /* Maintain 1:1 aspect ratio */
-            aspect-ratio: 1 / 1; 
-            border-radius: 8px;
-            border: 4px solid #30363d;
-            background-color: #0f131a;
-            touch-action: none; 
-            overflow: hidden;
+        
+        .player-id-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background-color: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            border-radius: 6px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
         
-        #gameCanvas {
-            width: 100%;
-            height: 100%;
-            display: block;
+        .player-id-container:hover {
+            background-color: rgba(88, 166, 255, 0.2);
         }
-
-        /* Input and Button Styles */
-        #answerInput {
-            background-color: #21262d;
-            border: 2px solid #30363d;
+        
+        .copy-icon {
+            width: 16px;
+            height: 16px;
             color: #58a6ff;
-            font-size: 1.5rem;
-            text-align: center;
-        }
-
-        .keypad-button {
-            background-color: #30363d;
-            color: #c9d1d9;
-            font-size: 1.25rem;
-            padding: 10px 0;
-            border-radius: 6px;
-            transition: transform 0.1s;
-            box-shadow: 0 4px #21262d;
             cursor: pointer;
         }
 
-        .keypad-button:active {
+        .auto-detected {
+            border-color: #3fb950 !important;
+            background-color: rgba(63, 185, 80, 0.1) !important;
+        }
+
+        #homeScreen {
+            background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+            border-radius: 8px;
+            padding: clamp(15px, 4vw, 20px); 
+        }
+        
+        #homeButtonBox {
+            border: 4px solid #f85149; 
+            padding: clamp(15px, 4vw, 20px);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 3vw, 15px);
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.3); 
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(248, 81, 73, 0.5); 
+        }
+
+        .quit-button {
+            background-color: #f85149;
+            color: white;
+            padding: clamp(6px, 2vw, 8px);
+            border-radius: 8px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            font-weight: bold;
+            box-shadow: 0 4px #b33833;
+            transition: transform 0.1s;
+        }
+        .quit-button:active {
             transform: translateY(2px);
-            box-shadow: 0 2px #21262d;
-        }
-
-        .action-button {
-            background-color: #58a6ff;
-            color: #0d1117;
-            box-shadow: 0 4px #448ccf;
-        }
-
-        .action-button:active {
-            box-shadow: 0 2px #448ccf;
-        }
-
-        /* Text colors */
-        .stat-label {
-            color: #8b949e;
-        }
-        .stat-value {
-            color: #c9d1d9;
-        }
-        .correct-message {
-            color: #3fb950;
-        }
-        .incorrect-message {
-            color: #f85149;
+            box-shadow: 0 2px #b33833;
         }
 
         .leaderboard-item {
@@ -159,85 +203,115 @@
             grid-template-columns: 1fr 3fr 2fr;
             padding: 4px 8px;
             border-bottom: 1px solid #30363d;
-        }
-        
-        .player-id-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            cursor: pointer;
-            padding: 4px 0;
-            border: 1px dashed transparent;
-            border-radius: 4px;
+            font-size: clamp(0.75rem, 2vw, 0.875rem);
         }
 
-        .player-id-container:hover {
-            border-color: #58a6ff55;
-        }
-        
-        .copy-icon {
-            color: #58a6ff;
-            width: 14px;
-            height: 14px;
-            display: inline-block;
-        }
-        
-        /* New styling for Sign In button */
-        #signInButton {
-            background-color: #f9d22d;
-            color: #0d1117;
-            font-family: 'Luckiest Guy', cursive;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 4px #d4a71c;
-            transition: background-color 0.1s;
-        }
-        #signInButton:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px #d4a71c;
-        }
-        
-        /* Style for active leaderboard filter button */
         .leaderboard-filter-active {
-            background-color: #58a6ff;
-            color: #0d1117;
-            font-weight: bold;
+            background-color: #58a6ff !important;
+            color: #0d1117 !important;
         }
 
+        /* Make filter buttons responsive */
+        .leaderboard-filter-btn {
+            font-size: clamp(0.7rem, 2vw, 0.875rem);
+            padding: clamp(4px, 1.5vw, 8px) clamp(8px, 2vw, 12px);
+        }
+
+        /* Responsive stat labels and values */
+        .stat-label {
+            font-size: clamp(0.65rem, 1.8vw, 0.75rem);
+        }
+
+        .stat-value {
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+        }
     </style>
 </head>
 <body>
 
 <div class="game-container">
+    
     <div class="text-center">
-        <h1 class="text-4xl font-bold text-yellow-400 game-title">MATH DASH</h1>
-        <p class="text-sm stat-label">Master the Basic Operations & Integers</p>
-        
-        <div class="player-id-container text-xs stat-label mt-1" id="userIdContainer" title="Click to copy your Firebase ID">
-            Player ID: 
-            <span id="userIdDisplay" class="font-semibold text-gray-300">Loading...</span>
-            <span id="copyFeedback" class="text-green-500 text-xs hidden">Copied!</span>
-            <svg class="copy-icon" id="copyIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z" />
-                <path d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2V5h6a2 2 0 00-2-2H5z" />
-            </svg>
-        </div>
+        <h1 class="text-3xl sm:text-4xl font-bold text-yellow-400 game-title">MRace</h1>
     </div>
     
-    <div id="userInputScreen" class="py-6 flex flex-col gap-4 text-center">
-        <p class="text-gray-300">Enter your Player Name to compete:</p>
-        <input type="text" id="userNameInput" placeholder="Enter Name (e.g., JaneD7)" 
-                class="rounded p-3 text-lg text-center bg-gray-800 border border-yellow-400 text-yellow-400" 
-                maxlength="15">
-        <button id="signInButton" class="w-full py-3">
-            PLAY AS DAHER
+    <div id="homeScreen" class="flex flex-col gap-4 items-center text-center">
+        
+        <div id="homeHeader">
+            <p class="stat-label mb-2" style="font-size: clamp(0.65rem, 2vw, 0.75rem);">Master the Basic Operations & Integers</p>
+            <img src="./MRace/file_00000000ae447206a4e2d6c246c95810-removebg-preview.png" alt="MRace Logo" class="w-full max-w-[100px] sm:max-w-[120px] h-auto mx-auto">
+        </div>
+
+        <div id="homeButtonBox">
+            <img id="playButton" src="./MRace/received_1196488405728233-removebg-preview.png" alt="Play Button" class="w-3/5 max-w-[130px] sm:max-w-[150px] h-auto cursor-pointer transition-transform duration-100 active:scale-95">
+
+            <button id="quitButton" class="quit-button w-4/5 max-w-[220px] sm:max-w-[250px] mt-2 sm:mt-3">
+                QUIT GAME
+            </button>
+        </div>
+    </div>
+
+    <div id="userInputScreen" class="hidden py-6 flex-col gap-4 text-center">
+        
+        <div id="playerInfoHeader">
+            <p class="text-gray-300 font-semibold">Enter Your Information:</p>
+            
+            <div class="player-id-container text-xs stat-label mt-1" id="userIdContainer" title="Click to copy your Firebase ID">
+                Player ID: 
+                <span id="userIdDisplay" class="font-semibold text-gray-300">Loading...</span>
+                <span id="copyFeedback" class="text-green-500 text-xs hidden">Copied!</span>
+                <svg class="copy-icon" id="copyIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z" />
+                    <path d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2V5h6a2 2 0 00-2-2H5z" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-2 text-left">
+            <label class="stat-label">Surname:</label>
+            <input type="text" id="surnameInput" placeholder="Enter Surname (e.g., Dela Cruz)" 
+                    class="rounded p-2 sm:p-3 text-base sm:text-lg bg-gray-800 border border-yellow-400 text-yellow-400 gap-2" 
+                    maxlength="20">
+        </div>
+
+        <div class="flex flex-col gap-2 text-left mb-6">
+            <label class="stat-label">Year and Section:</label>
+            <select id="yearSectionSelect" 
+                    class="rounded p-2 sm:p-3 text-base sm:text-lg bg-gray-800 border border-yellow-400 text-yellow-400"
+                    disabled>
+                <option value="">-- Enter Surname First --</option>
+                <option value="7 - STE">7 - STE</option>
+                <option value="7 - Python">7 - Python</option>
+                <option value="7 - Twinkl">7 - Twinkl</option>
+                <option value="7 - Sampaguita">7 - Sampaguita</option>
+                <option value="7 - Camia">7 - Camia</option>
+                <option value="7 - Ilang-ilang">7 - Ilang-ilang</option>
+                <option value="7 - Daisy">7 - Daisy</option>
+                <option value="7 - Dahlia">7 - Dahlia</option>
+                <option value="7 - Gumamela">7 - Gumamela</option>
+                <option value="7 - Sunflower">7 - Sunflower</option>
+                <option value="7 - Santan">7 - Santan</option>
+                <option value="7 - Lilac">7 - Lilac</option>
+                <option value="7 - Tulip">7 - Tulip</option>
+            </select>
+        </div>
+      
+        
+        <button id="signInButton" class="w-full py-2 sm:py-3 bg-yellow-400 text-gray-900 font-extrabold rounded-lg shadow-lg text-base sm:text-lg" 
+            style="font-family: 'Luckiest Guy', cursive; box-shadow: 0 4px #d4a71c;" disabled>
+            START RACING
         </button>
-        <p id="authMessage" class="text-sm text-gray-400 h-4">Firebase Ready</p>
+        
+        <button id="backToHomeButton" class="w-full py-2 sm:py-3 bg-yellow-400 text-black font-bold rounded-lg shadow-lg text-base sm:text-lg hover:bg-gray-700 transition-colors mt-3" 
+            style="font-family: 'Luckiest Guy', cursive; box-shadow: 0 4px #d4a71c">
+            ← BACK TO HOME
+        </button>
+        
+        <p id="authMessage" class="stat-label h-4 mt-2">Firebase Ready</p>
     </div>
 
     <div id="gameScreen" class="hidden">
-        <div class="flex justify-between p-2 rounded bg-gray-800/50 text-sm font-semibold">
+        <div class="flex justify-between p-2 rounded bg-gray-800/50 text-xs sm:text-sm font-semibold">
             <div class="flex flex-col items-center">
                 <span class="stat-label">TIME</span>
                 <span id="time" class="stat-value">60s</span>
@@ -256,11 +330,11 @@
             <canvas id="gameCanvas"></canvas>
         </div>
     
-        <div class="text-center p-3 rounded bg-gray-800 border-b-4 border-yellow-400">
-            <div id="questionDisplay" class="text-3xl font-bold text-white mb-2">
+        <div class="text-center p-2 sm:p-3 rounded bg-gray-800 border-b-4 border-yellow-400">
+            <div id="questionDisplay" class="text-2xl sm:text-3xl font-bold text-white mb-2">
                 Tap START
             </div>
-            <div id="feedback" class="h-6 text-lg font-semibold correct-message"></div>
+            <div id="feedback" class="h-6 text-base sm:text-lg font-semibold correct-message"></div>
         </div>
     
         <div class="flex flex-col gap-2">
@@ -290,8 +364,7 @@
     </div>
     
     <div id="menuScreen" class="hidden flex-col gap-3 py-4">
-        <h2 class="text-xl font-bold text-blue-400 text-center">SELECT MODE</h2>
-        <p class="text-sm text-yellow-400 text-center">Playing as: <span id="currentUserName">Guest</span></p>
+        <h2 class="text-lg sm:text-xl font-bold text-blue-400 text-center">SELECT MODE</h2>
         <button class="mode-button" data-mode="ADDITION">ADDITION</button>
         <button class="mode-button" data-mode="SUBTRACTION">SUBTRACTION</button>
         <button class="mode-button" data-mode="MULTIPLICATION">MULTIPLICATION</button>
@@ -300,7 +373,6 @@
             INTEGERS (Mixed)
         </button>
     </div>
-
 
     <div id="gameOverModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center p-4 z-10">
         <div class="bg-gray-700 p-6 rounded-xl shadow-2xl text-center w-full max-w-sm">
@@ -317,18 +389,19 @@
         </div>
     </div>
 
-    <div class="mt-4 p-3 rounded bg-gray-800/50">
+    <div id="leaderboardSection" class="hidden mt-4 p-3 rounded bg-gray-800/50">
         <div class="flex flex-wrap justify-center gap-2 mb-3 bg-gray-700 p-2 rounded">
             <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="OVERALL">Overall</button>
+            <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="MY_SECTION">My Section</button>
             <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="ADDITION">Addition</button>
             <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="SUBTRACTION">Subtraction</button>
             <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="MULTIPLICATION">Multiplication</button>
             <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="DIVISION">Division</button>
-            <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="INTEGERS">Mixed Int</button>
+            <button class="leaderboard-filter-btn px-3 py-1 rounded text-sm bg-gray-800 text-white" data-filter="INTEGERS">Mixed Integers</button>
         </div>
 
-        <h3 id="leaderboardTitle" class="text-lg font-bold text-blue-400 mb-2 border-b border-blue-400/50">Top Dashers (Overall)</h3>
-        <div id="leaderboard" class="text-sm">
+        <h3 id="leaderboardTitle" class="text-base sm:text-lg font-bold text-blue-400 mb-2 border-b border-blue-400/50">Top Dashers (Overall)</h3>
+        <div id="leaderboard" class="text-xs sm:text-sm">
             <div class="leaderboard-item font-bold text-gray-400">
                 <span>#</span>
                 <span>Player</span>
@@ -339,22 +412,22 @@
             </div>
         </div>
     </div>
-
 </div>
 
 <script type="module">
     // Firebase Imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, doc, getDoc, setDoc, query, where, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, doc, getDoc, getDocs, setDoc, query, where, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
     // --- Firebase Setup ---
     let app, db, auth, userId = null;
-    let userName = "Guest"; // New: Stores the player's entered name
+    let userSurname = ""; 
+    let userSection = ""; 
+    let identityLocked = false; 
+    
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     
-    // Fallback Public Firebase Config (Replace these placeholders with your actual project keys)
-    // NOTE: You must replace "YOUR_PROJECT_ID" and other placeholders with your actual FIREBASE PROJECT CONFIG!
     const PUBLIC_FIREBASE_CONFIG = {
         apiKey: "AIzaSyDRmaI9bZXdQ_IQDV-AfLb0cHxTQx15DJc",
         authDomain: "math-dash-f377d.firebaseapp.com",
@@ -365,22 +438,17 @@
         measurementId: "G-50YS8K8BQM"
     };
     
-    // Use the injected config if available, otherwise use the public fallback
     let firebaseConfig = null;
     try {
-        // This attempts to get the config from the hosting environment (if available)
         firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : PUBLIC_FIREBASE_CONFIG;
     } catch (e) {
-        // If parsing fails, fall back to the manually edited public config
         firebaseConfig = PUBLIC_FIREBASE_CONFIG;
     }
     
     const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-    // NOTE: This collection now stores UNIQUE high scores per user/mode
     const SCORE_COLLECTION_PATH = `artifacts/${appId}/public/data/math_dash_scores`;
     let attempts = 0;
     const MAX_ATTEMPTS = 5;
-
 
     // Constants and Game Configuration
     const CANVAS = document.getElementById('gameCanvas');
@@ -405,11 +473,17 @@
     const MENU_SCREEN = document.getElementById('menuScreen');
     const GAME_SCREEN = document.getElementById('gameScreen');
     const USER_INPUT_SCREEN = document.getElementById('userInputScreen');
-    const USER_NAME_INPUT = document.getElementById('userNameInput');
+    const SURNAME_INPUT = document.getElementById('surnameInput'); 
+    const YEAR_SECTION_SELECT = document.getElementById('yearSectionSelect');
     const SIGN_IN_BUTTON = document.getElementById('signInButton');
     const AUTH_MESSAGE = document.getElementById('authMessage');
-    const CURRENT_USER_NAME_DISPLAY = document.getElementById('currentUserName');
     const FILTER_BUTTONS = document.querySelectorAll('.leaderboard-filter-btn');
+    
+    const HOME_SCREEN = document.getElementById('homeScreen');
+    const PLAY_BUTTON = document.getElementById('playButton');
+    const QUIT_BUTTON = document.getElementById('quitButton');
+    const LEADERBOARD_SECTION = document.getElementById('leaderboardSection'); 
+    const HOME_HEADER = document.getElementById('homeHeader'); 
 
     // Game State
     let gameState = {
@@ -440,43 +514,30 @@
         bgImage: null,
         bgImageLoaded: false,
         bgImageY: 0,
-        // Live data for competitors
         competitors: [] 
     };
 
-    // --- Firebase Listeners and Competition Logic ---
     let unsubscribeCompetitors = null;
     
-    /**
-     * Helper to generate a unique doc ID for high scores (user_mode).
-     */
     function getHighscoreDocId(mode, uid) {
-        if (mode === 'OVERALL') {
-            // For Overall, use just the UID
+        if (mode === 'OVERALL' || mode === 'MY_SECTION') {
             return uid;
         }
-        // For mode-specific scores, combine UID and Mode
         return `${uid}_${mode}`;
     }
 
-    /**
-     * Starts a real-time listener for the top scores in the current game mode.
-     * NOTE: Query simplified to use only 'mode' and 'score' to mitigate indexing errors.
-     */
     function startCompetitorListener() {
         if (!db || !gameState.mode) return;
         
-        // Clear previous listener
         if (unsubscribeCompetitors) {
             unsubscribeCompetitors();
         }
 
         const mode = gameState.mode;
-        // Query only by mode and score to avoid complex indexing issues.
         const competitorsQuery = query(
             collection(db, SCORE_COLLECTION_PATH),
             where("mode", "==", mode),
-            orderBy("score", "desc"), // Primary sorting field
+            orderBy("score", "desc"), 
             limit(5) 
         );
 
@@ -484,17 +545,15 @@
             let topCompetitors = [];
             snapshot.forEach(doc => {
                 const data = doc.data();
-                // Filter out the current user and any scores without user info
                 if (data.userId && data.userId !== userId) {
                     topCompetitors.push({
-                        userName: data.userName || 'Racer',
+                        userSurname: `${data.userSurname || ''}`, 
                         distance: data.distance || 0,
-                        score: data.score || 0, // Keep score data for sorting ties
+                        score: data.score || 0, 
                         userId: data.userId
                     });
                 }
             });
-            // Sort client-side by distance if scores are equal, but mainly rely on score
             topCompetitors.sort((a, b) => {
                 if (b.score !== a.score) {
                     return b.score - a.score;
@@ -502,16 +561,12 @@
                 return b.distance - a.distance;
             });
             
-            // Update the game state with the top competitors
             gameState.competitors = topCompetitors.slice(0, 4); 
         }, (error) => {
             console.error("Error fetching live competitors:", error);
         });
     }
 
-    /**
-     * Stops the real-time competitor listener.
-     */
     function stopCompetitorListener() {
         if (unsubscribeCompetitors) {
             unsubscribeCompetitors();
@@ -520,12 +575,10 @@
         gameState.competitors = [];
     }
 
-
     // Load background image
     const backgroundImage = new Image();
     backgroundImage.onload = () => {
         gameState.bgImageLoaded = true;
-        // Draw static screen immediately after load if we are on menu/input
         if (!gameState.isRunning) {
             drawStaticScreen();
         }
@@ -533,107 +586,363 @@
     backgroundImage.onerror = () => {
         console.error("Failed to load background image.");
     };
-    // Corrected Path: Use '../' to step up one directory level from 'public' to reach 'bg_image.jpg'
-    backgroundImage.src = '../bg_image.jpg'; 
+    backgroundImage.src = './MRace/bg_image.jpg'; 
 
-
-    /**
-     * Toggles between different app views.
-     */
     function setView(view) {
+        HOME_SCREEN.classList.add('hidden');
         USER_INPUT_SCREEN.classList.add('hidden');
         MENU_SCREEN.classList.add('hidden');
         GAME_SCREEN.classList.add('hidden');
         GAME_OVER_MODAL.classList.add('hidden');
+        LEADERBOARD_SECTION.classList.add('hidden');
         
-        if (view === 'input') {
+        if (view === 'home') {
+            HOME_SCREEN.classList.remove('hidden');
+            // Leaderboard stays hidden on home screen
+        } else if (view === 'input') {
             USER_INPUT_SCREEN.classList.remove('hidden');
+            LEADERBOARD_SECTION.classList.remove('hidden');
         } else if (view === 'menu') {
             MENU_SCREEN.classList.remove('hidden');
-            CURRENT_USER_NAME_DISPLAY.textContent = userName;
+            LEADERBOARD_SECTION.classList.remove('hidden');
         } else if (view === 'game') {
             GAME_SCREEN.classList.remove('hidden');
+            LEADERBOARD_SECTION.classList.remove('hidden');
+        }
+    }
+    
+    function showHome() {
+        setView('home');
+    }
+
+    function lockIdentityUI() {
+        SURNAME_INPUT.value = userSurname;
+        YEAR_SECTION_SELECT.value = userSection;
+        SURNAME_INPUT.disabled = true;
+        YEAR_SECTION_SELECT.disabled = true;
+        SIGN_IN_BUTTON.textContent = `CONTINUE AS ${userSurname.toUpperCase()}`;
+        SIGN_IN_BUTTON.disabled = false;
+        SIGN_IN_BUTTON.style.opacity = '1';
+        
+        AUTH_MESSAGE.textContent = "Ready to Dash!"; 
+        AUTH_MESSAGE.style.color = "#8b949e";
+        
+        const mySectionBtn = document.querySelector('[data-filter="MY_SECTION"]');
+        if (mySectionBtn) {
+            mySectionBtn.textContent = userSection || 'My Section';
         }
     }
 
     /**
-     * Handles the "Sign In" button click by setting the player name.
+     * Validates user input fields and enables/disables the sign-in button
      */
-    function handleSignIn() {
-        const inputName = USER_NAME_INPUT.value.trim();
-        if (inputName.length < 3) {
-            AUTH_MESSAGE.textContent = "Name must be 3-15 characters.";
+    async function validateUserInput() {
+        const inputSurname = SURNAME_INPUT.value.trim();
+        const inputSection = YEAR_SECTION_SELECT.value;
+        
+        // Check if surname exists in database and auto-fill section
+        if (inputSurname.length >= 2 && db && !identityLocked) {
+            try {
+                const scoresRef = collection(db, SCORE_COLLECTION_PATH);
+                const surnameQuery = query(
+                    scoresRef,
+                    where("userSurname", "==", inputSurname),
+                    where("isOverall", "==", true),
+                    limit(1)
+                );
+                
+                const snapshot = await getDocs(surnameQuery);
+                
+                if (!snapshot.empty) {
+                    // Surname exists! Auto-fill the section
+                    const existingUserData = snapshot.docs[0].data();
+                    const existingSection = existingUserData.userSection;
+                    
+                    if (existingSection) {
+                        YEAR_SECTION_SELECT.value = existingSection;
+                        YEAR_SECTION_SELECT.disabled = true; // Lock the section dropdown
+                        YEAR_SECTION_SELECT.classList.add('auto-detected'); // Add green border
+                        
+                        AUTH_MESSAGE.textContent = `Found: ${inputSurname} from ${existingSection}`;
+                        AUTH_MESSAGE.style.color = "#3fb950"; // Green color
+                        
+                        SIGN_IN_BUTTON.disabled = false;
+                        SIGN_IN_BUTTON.style.opacity = '1';
+                        SIGN_IN_BUTTON.textContent = `CONTINUE AS ${inputSurname.toUpperCase()}`;
+                        
+                        return; // Exit early since we found existing user
+                    }
+                } else {
+                    // Surname doesn't exist, remove auto-detected styling
+                    YEAR_SECTION_SELECT.classList.remove('auto-detected');
+                }
+                
+                // Surname doesn't exist, enable section selection
+                YEAR_SECTION_SELECT.disabled = false;
+                YEAR_SECTION_SELECT.querySelector('option[value=""]').textContent = "-- Select Your Section --";
+                SIGN_IN_BUTTON.textContent = `START RACING`;
+                
+            } catch (error) {
+                console.error("Error checking existing user:", error);
+            }
+        }
+        
+        // Enable Year and Section dropdown only if surname has at least 2 characters
+        if (inputSurname.length >= 2 && YEAR_SECTION_SELECT.disabled && !identityLocked) {
+            // Only enable if it wasn't already disabled due to existing user
+            const selectedValue = YEAR_SECTION_SELECT.value;
+            if (selectedValue === "") {
+                YEAR_SECTION_SELECT.disabled = false;
+                YEAR_SECTION_SELECT.classList.remove('auto-detected');
+                YEAR_SECTION_SELECT.querySelector('option[value=""]').textContent = "-- Select Your Section --";
+            }
+        } else if (inputSurname.length < 2 && !identityLocked) {
+            YEAR_SECTION_SELECT.disabled = true;
+            YEAR_SECTION_SELECT.value = "";
+            YEAR_SECTION_SELECT.classList.remove('auto-detected');
+            YEAR_SECTION_SELECT.querySelector('option[value=""]').textContent = "-- Enter Surname First --";
+        }
+        
+        // Enable button only if both fields are valid
+        if (inputSection !== "" && inputSurname.length >= 2 && inputSurname.length <= 20) {
+            SIGN_IN_BUTTON.disabled = false;
+            SIGN_IN_BUTTON.style.opacity = '1';
+            
+            if (!identityLocked) {
+                AUTH_MESSAGE.textContent = "Ready to start!";
+                AUTH_MESSAGE.style.color = "#8b949e";
+            }
+        } else {
+            if (!identityLocked) {
+                SIGN_IN_BUTTON.disabled = true;
+                SIGN_IN_BUTTON.style.opacity = '0.5';
+                
+                if (inputSurname.length >= 2 && inputSection === "" && !YEAR_SECTION_SELECT.disabled) {
+                    AUTH_MESSAGE.textContent = "Please select your Year and Section.";
+                    AUTH_MESSAGE.style.color = "#8b949e";
+                } else if (inputSurname.length < 2) {
+                    AUTH_MESSAGE.textContent = "Enter your surname to continue.";
+                    AUTH_MESSAGE.style.color = "#8b949e";
+                } else {
+                    AUTH_MESSAGE.textContent = "Enter your information to play.";
+                    AUTH_MESSAGE.style.color = "#8b949e";
+                }
+            }
+        }
+    }
+
+    /**
+     * Attempts to lookup existing user data by surname and section
+     */
+    async function lookupExistingUser(surname, section) {
+        if (!db || !surname || !section) return null;
+        
+        try {
+            const scoresRef = collection(db, SCORE_COLLECTION_PATH);
+            const userQuery = query(
+                scoresRef,
+                where("userSurname", "==", surname),
+                where("userSection", "==", section),
+                where("isOverall", "==", true),
+                limit(1)
+            );
+            
+            const snapshot = await getDocs(userQuery);
+            
+            if (!snapshot.empty) {
+                return snapshot.docs[0].data();
+            }
+        } catch (error) {
+            console.error("Error looking up existing user:", error);
+        }
+        
+        return null;
+    }
+
+    /**
+     * Handles the sign-in/registration logic and saves identity to Firestore
+     */
+    async function handleSignIn() {
+        if (identityLocked && userSection && userSurname) {
+            AUTH_MESSAGE.textContent = `Welcome back, ${userSurname}!`;
+            setView('menu');
+            showMenu();
+            return;
+        }
+
+        const inputSurname = SURNAME_INPUT.value.trim();
+        const inputSection = YEAR_SECTION_SELECT.value;
+
+        if (inputSection === "") {
+            AUTH_MESSAGE.textContent = "Please select a Year and Section.";
             return;
         }
         
-        userName = inputName;
-        localStorage.setItem('mathDashUserName', userName);
+        if (inputSurname.length < 2 || inputSurname.length > 20) {
+            AUTH_MESSAGE.textContent = "Surname must be 2-20 characters.";
+            return;
+        }
+
+        userSurname = inputSurname;
+        userSection = inputSection;
+        identityLocked = true;
+
+        localStorage.setItem('mathDashUserSurname', userSurname);
+        localStorage.setItem('mathDashUserSection', userSection);
         
-        AUTH_MESSAGE.textContent = "";
+        if (db && userId) {
+             try {
+                const userDocRef = doc(db, 'users', userId); 
+                await setDoc(userDocRef, {
+                    userId: userId,
+                    userSurname: userSurname,
+                    userSection: userSection,
+                    lastLogin: serverTimestamp()
+                }, { merge: true });
+                console.log("User identity saved to Firestore.");
+            } catch (error) {
+                console.error("Error saving user identity to Firestore:", error);
+                AUTH_MESSAGE.textContent = "Error saving identity. Check Firebase Rules.";
+            }
+        }
+        
+        lockIdentityUI();
+        
+        if (gameState.currentFilter === 'MY_SECTION') {
+            loadHighScores('MY_SECTION');
+        }
+        
         setView('menu');
-        showMenu(); // Ensure canvas redraws correctly
+        showMenu();
     }
     
-    /**
-     * Shows the main menu and hides the game screen.
-     */
     function showMenu() {
         setView('menu');
         gameState.isRunning = false;
         if (gameState.gameInterval) clearInterval(gameState.gameInterval);
         if (gameState.timeLimitInterval) clearInterval(gameState.timeLimitInterval);
-        stopCompetitorListener(); // Stop listening for competitors
-        drawStaticScreen(); // Redraw menu screen style on canvas
+        stopCompetitorListener(); 
+        drawStaticScreen(); 
     }
     
+    function quitProgram() {
+        if (confirm("Are you sure you want to quit the game?")) {
+            window.close();
+            document.body.innerHTML = '<div style="font-family: Arial, sans-serif; text-align: center; color: white; padding-top: 50vh; transform: translateY(-50%); background-color: #0d1117; font-size: 24px;">Game has ended. Thank you for playing!</div>';
+        }
+    }
+
     /**
-     * Initializes Firebase and authenticates the user.
+     * Checks Firestore for existing user identity based on userId
      */
+    async function checkExistingUserIdentity(currentUserId) {
+        if (!db || !currentUserId) return false;
+        
+        const userDocRef = doc(db, 'users', currentUserId);
+        
+        let data = null;
+        try {
+            const userDocSnap = await getDoc(userDocRef);
+            
+            if (userDocSnap.exists()) {
+                data = userDocSnap.data();
+            } else {
+                const overallScoreRef = doc(db, SCORE_COLLECTION_PATH, currentUserId);
+                const scoreDocSnap = await getDoc(overallScoreRef);
+                
+                if (scoreDocSnap.exists() && scoreDocSnap.data().isOverall) {
+                    data = scoreDocSnap.data();
+                }
+            }
+        } catch (error) {
+            console.error("Error checking existing user identity in Firestore:", error);
+            return false; 
+        }
+        
+        if (data && data.userSurname && data.userSection) {
+            userSurname = data.userSurname;
+            userSection = data.userSection;
+            identityLocked = true;
+            localStorage.setItem('mathDashUserSurname', userSurname);
+            localStorage.setItem('mathDashUserSection', userSection);
+            lockIdentityUI();
+            return true;
+        }
+        
+        return false;
+    }
+
     async function initFirebase() {
-        // Load stored name if available
-        const storedName = localStorage.getItem('mathDashUserName');
-        if (storedName) {
-            userName = storedName;
-            USER_NAME_INPUT.value = storedName;
-            SIGN_IN_BUTTON.textContent = `CONTINUE AS ${storedName.toUpperCase()}`;
-            AUTH_MESSAGE.textContent = "Welcome back!";
+        // Check local storage first
+        const storedSurname = localStorage.getItem('mathDashUserSurname');
+        const storedSection = localStorage.getItem('mathDashUserSection');
+        
+        if (storedSurname && storedSection) {
+            userSurname = storedSurname;
+            userSection = storedSection;
+            identityLocked = true;
+            lockIdentityUI();
         } else {
-            SIGN_IN_BUTTON.textContent = `PLAY AS GUEST`;
+            SIGN_IN_BUTTON.textContent = `START RACING`;
+            SIGN_IN_BUTTON.disabled = true;
+            SIGN_IN_BUTTON.style.opacity = '0.5';
+            YEAR_SECTION_SELECT.disabled = true; // Disabled until surname is entered
+            if(storedSurname) {
+                SURNAME_INPUT.value = storedSurname;
+                validateUserInput(); // This will enable section if surname is valid
+            }
+            if(storedSection) YEAR_SECTION_SELECT.value = storedSection;
         }
 
-        // Check if config is available (now using the public fallback if __firebase_config is missing)
         if (!firebaseConfig.projectId || firebaseConfig.projectId === "YOUR_PROJECT_ID") {
             console.error("Firebase config is missing or using placeholders. Scoreboard disabled.");
             USER_ID_DISPLAY.textContent = "OFFLINE MODE";
-            AUTH_MESSAGE.textContent = "Running in Offline/Local Mode. (Update Project ID!)";
-            setView('input');
+            AUTH_MESSAGE.textContent = "Running in Offline/Local Mode.";
+            setView('home'); 
             return;
         }
-
 
         try {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-            AUTH_MESSAGE.textContent = "Connecting to competition server...";
+            AUTH_MESSAGE.textContent = "Connecting to server...";
 
-            onAuthStateChanged(auth, (user) => {
+            onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     userId = user.uid;
                     USER_ID_DISPLAY.textContent = userId;
                     gameState.isAuthReady = true;
-                    AUTH_MESSAGE.textContent = "Ready to Dash!";
-                    loadHighScores(); // Load initial OVERALL scores
+                    
+                    if (!identityLocked) {
+                        AUTH_MESSAGE.textContent = "Checking for user data...";
+                        const identityFound = await checkExistingUserIdentity(userId);
+                        
+                        if (identityFound) {
+                            AUTH_MESSAGE.textContent = "User data found! Ready to Dash!";
+                        } else {
+                            AUTH_MESSAGE.textContent = "Enter your information to play.";
+                            SURNAME_INPUT.disabled = false;
+                            // YEAR_SECTION_SELECT will be enabled by validateUserInput when surname is entered
+                        }
+                    } else {
+                        AUTH_MESSAGE.textContent = "Ready to Dash!";
+                    }
+
+                    loadHighScores(); 
+                    const mySectionBtn = document.querySelector('[data-filter="MY_SECTION"]');
+                    if (mySectionBtn) {
+                        mySectionBtn.textContent = userSection || 'My Section';
+                    }
                 } else {
                     userId = null;
                     USER_ID_DISPLAY.textContent = "Unauthenticated";
                     gameState.isAuthReady = true;
-                    AUTH_MESSAGE.textContent = "Authentication required to post score.";
-                    loadHighScores(); // Load initial OVERALL scores
+                    AUTH_MESSAGE.textContent = "Authentication required.";
+                    loadHighScores(); 
                 }
             });
 
-            // Always try to sign in anonymously for persistent ID
             const token = initialAuthToken || "";
             if (token && token !== "YOUR_INITIAL_AUTH_TOKEN") {
                 await signInWithCustomToken(auth, initialAuthToken);
@@ -641,27 +950,22 @@
                 await signInAnonymously(auth);
             }
             
-            // Initial view is the input screen
-            setView('input');
+            setView('home'); 
 
         } catch (error) {
-            console.error("Firebase Initialization or Authentication failed:", error);
+            console.error("Firebase initialization failed:", error);
             USER_ID_DISPLAY.textContent = "Auth Error";
-            AUTH_MESSAGE.textContent = "Error connecting to Firebase. Check console.";
+            AUTH_MESSAGE.textContent = "Error connecting to Firebase.";
             gameState.isAuthReady = true;
-            setView('input');
+            setView('home'); 
         }
     }
     
-    /**
-     * Copies the current User ID to the clipboard and provides visual feedback.
-     */
     function copyUserIdToClipboard() {
         if (!userId || userId === "Loading..." || userId === "Auth Error") {
             return;
         }
 
-        // Use the older execCommand('copy') for better iframe compatibility
         const tempInput = document.createElement('textarea');
         tempInput.value = userId;
         document.body.appendChild(tempInput);
@@ -676,32 +980,27 @@
             }, 2000);
         } catch (err) {
             console.error('Could not copy text: ', err);
-            // Fallback for user if copy fails
             alert("Copy failed. Your Firebase ID is: " + userId);
         } finally {
             document.body.removeChild(tempInput);
         }
     }
 
-
-    // --- Firestore Score and Leaderboard Functions ---
-
-    /**
-     * Saves the score/distance for the given mode, updating the existing high score 
-     * document or creating a new one if it's a new personal best.
-     */
     async function saveScore(score, distance) {
         if (!gameState.isAuthReady || !db || !userId) {
-            console.warn("Authentication not ready or DB not initialized. Score not saved.");
+            console.warn("Authentication not ready. Score not saved.");
             return;
         }
         
-        // 1. Logic for Mode-Specific High Score (if applicable)
-        if (gameState.mode) {
+        if (!userSurname || !userSection) {
+            console.warn("User Surname or Section missing. Score not saved.");
+            return;
+        }
+
+        if (gameState.mode && gameState.mode !== 'OVERALL') {
             const modeDocId = getHighscoreDocId(gameState.mode, userId);
             const modeScoreRef = doc(db, SCORE_COLLECTION_PATH, modeDocId);
             
-            // Check the existing score for this mode
             const docSnap = await getDoc(modeScoreRef);
             const existingScore = docSnap.exists() ? docSnap.data().score : -1;
 
@@ -709,38 +1008,36 @@
                 try {
                     await setDoc(modeScoreRef, {
                         userId: userId,
-                        userName: userName,
+                        userSurname: userSurname, 
+                        userSection: userSection, 
                         score: score,
                         distance: parseFloat(distance.toFixed(1)),
                         mode: gameState.mode,
                         timestamp: serverTimestamp(),
-                        // A flag to easily filter mode-specific high scores
                         isOverall: false 
                     });
                     console.log(`High score saved for mode: ${gameState.mode}!`);
                 } catch (error) {
-                    console.error(`Error saving mode-specific high score for ${gameState.mode}:`, error);
+                    console.error(`Error saving mode high score:`, error);
                 }
             }
         }
         
-        // 2. Logic for Overall High Score
-        // The Overall high score should be the highest score across ALL modes.
         const overallDocId = getHighscoreDocId('OVERALL', userId);
         const overallScoreRef = doc(db, SCORE_COLLECTION_PATH, overallDocId);
         
         const docSnap = await getDoc(overallScoreRef);
         const existingOverallScore = docSnap.exists() ? docSnap.data().score : -1;
         
-        // Only update the overall score if the current game's score is higher than the current overall record
         if (score > existingOverallScore) {
-             try {
+            try {
                 await setDoc(overallScoreRef, {
                     userId: userId,
-                    userName: userName,
+                    userSurname: userSurname, 
+                    userSection: userSection, 
                     score: score,
                     distance: parseFloat(distance.toFixed(1)),
-                    mode: 'OVERALL', // Store 'OVERALL' as the mode for this record
+                    mode: 'OVERALL', 
                     timestamp: serverTimestamp(),
                     isOverall: true 
                 });
@@ -751,13 +1048,9 @@
         }
     }
 
-    /**
-     * Loads and displays the top 10 high scores based on the current filter/mode.
-     * NOTE: Queries simplified to avoid complex indexing that caused the Firebase error.
-     */
     let unsubscribeLeaderboard = null;
 
-   function loadHighScores(modeFilter = gameState.currentFilter) {
+    function loadHighScores(modeFilter = gameState.currentFilter) {
         if (!db) return;
 
         if (unsubscribeLeaderboard) {
@@ -765,13 +1058,20 @@
             unsubscribeLeaderboard = null;
         }
 
-        if (modeFilter !== 'OVERALL') {
+        if (modeFilter === 'MY_SECTION') {
+            if (!userSection || userSection === "") {
+                LEADERBOARD_TITLE.textContent = `Top Dashers (Section Not Set)`;
+                LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-red-400">Please set your Year and Section to view this leaderboard.</p>`;
+                return;
+            }
+            LEADERBOARD_TITLE.textContent = `Top Dashers (${userSection})`;
+        } else if (modeFilter !== 'OVERALL') {
             LEADERBOARD_TITLE.textContent = `Top Dashers (${modeFilter})`;
         } else {
             LEADERBOARD_TITLE.textContent = `Top Dashers (Overall)`;
         }
         
-        FILTER_BUTTONS.forEach(btn => {
+        document.querySelectorAll('.leaderboard-filter-btn').forEach(btn => {
             btn.classList.remove('leaderboard-filter-active');
             if (btn.dataset.filter === modeFilter) {
                 btn.classList.add('leaderboard-filter-active');
@@ -780,13 +1080,29 @@
 
         let scoresQuery;
         
-        // Base query filters by mode, orders only by score (to minimize index complexity)
-        scoresQuery = query(
-            collection(db, SCORE_COLLECTION_PATH),
-            where("mode", "==", modeFilter),
-            orderBy("score", "desc"),
-            limit(10)
-        );
+        if (modeFilter === 'MY_SECTION') {
+            scoresQuery = query(
+                collection(db, SCORE_COLLECTION_PATH),
+                where("userSection", "==", userSection), 
+                where("isOverall", "==", true), 
+                orderBy("score", "desc"),
+                limit(10)
+            );
+        } else if (modeFilter === 'OVERALL') {
+            scoresQuery = query(
+                collection(db, SCORE_COLLECTION_PATH),
+                where("isOverall", "==", true),
+                orderBy("score", "desc"),
+                limit(10)
+            );
+        } else {
+            scoresQuery = query(
+                collection(db, SCORE_COLLECTION_PATH),
+                where("mode", "==", modeFilter),
+                orderBy("score", "desc"),
+                limit(10)
+            );
+        }
         
         unsubscribeLeaderboard = onSnapshot(scoresQuery, (snapshot) => {
             attempts = 0; 
@@ -795,8 +1111,6 @@
                 scores.push(doc.data());
             });
 
-            // If the scores are identical (e.g., tied score of 8), sort by distance client-side 
-            // since we removed the secondary Firestore order to fix the console error.
             scores.sort((a, b) => {
                 if (b.score !== a.score) {
                     return b.score - a.score;
@@ -808,13 +1122,11 @@
         }, (error) => {
             console.error("Error fetching leaderboard:", error);
             
-            // --- ERROR HANDLING FOR INDEXING ---
-            // Simplified retry/error display since the query should no longer require a composite index.
             if (error.code === 'permission-denied' || error.code === 'failed-precondition') {
                 if (attempts < MAX_ATTEMPTS) {
                     attempts++;
                     const delay = Math.pow(2, attempts) * 1000;
-                    console.log(`Retrying leaderboard load in ${delay / 1000}s (Attempt ${attempts}/${MAX_ATTEMPTS})...`);
+                    console.log(`Retrying leaderboard load in ${delay / 1000}s...`);
                     
                     if (unsubscribeLeaderboard) {
                         unsubscribeLeaderboard();
@@ -826,13 +1138,12 @@
                         loadHighScores(modeFilter); 
                     }, delay);
                     
-                    LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-yellow-400">Loading scores... (Retrying)</p>`;
+                    LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-yellow-400">Loading scores...</p>`;
                 } else {
-                     // Display a user-friendly error message about the index requirement
-                    LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-red-400">Error loading scores. Check Firebase rules/permissions.</p>`;
+                    LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-red-400">Error loading scores.</p>`;
                 }
             } else {
-                LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-red-400">Error loading scores. Check network.</p>`;
+                LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-red-400">Error loading scores.</p>`;
             }
         });
     }
@@ -840,7 +1151,7 @@
     function renderLeaderboard(scores) {
         LEADERBOARD_LIST.innerHTML = '';
         if (scores.length === 0) {
-            LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-gray-500">No scores yet for this category. Be the first!</p>`;
+            LEADERBOARD_LIST.innerHTML = `<p class="text-center py-2 text-gray-500">No scores yet. Be the first!</p>`;
             return;
         }
 
@@ -848,24 +1159,23 @@
             const item = document.createElement('div');
             item.className = 'leaderboard-item';
             
-            const displayUser = data.userName || (data.userId ? data.userId.substring(0, 10) + '...' : 'Unknown');
+            // Check if this is the current user's score
+            const isCurrentUser = data.userId === userId;
+            
+            const displayUser = `${data.userSurname || ''} (${data.userSection || 'N/A'})`;
             
             item.innerHTML = `
                 <span class="text-yellow-400">${index + 1}</span>
-                <span title="${data.userId}">${displayUser}</span>
-                <span class="font-bold text-green-400">${data.score} </span>
+                <span class="${isCurrentUser ? 'text-green-400 font-bold' : 'text-gray-300'}">${displayUser}${isCurrentUser ? ' ⭐' : ''}</span>
+                <span class="font-bold text-green-400">${data.score}</span>
             `;
             LEADERBOARD_LIST.appendChild(item);
         });
     }
 
-    // --- Game Logic Functions ---
-
-    /**
-     * Generates a random integer problem based on the selected mode.
-     */
     function generateIntegerProblem(max, mode) {
         const range = Math.max(5, max);
+        const useIntegers = (mode === 'INTEGERS'); 
         
         let ops;
         if (mode === 'INTEGERS') {
@@ -887,8 +1197,14 @@
         let num1, num2, answer, problem;
 
         do {
-            num1 = Math.floor(Math.random() * (2 * range + 1)) - range;
-            num2 = Math.floor(Math.random() * (2 * range + 1)) - range;
+            if (useIntegers) {
+                num1 = Math.floor(Math.random() * (2 * range + 1)) - range;
+                num2 = Math.floor(Math.random() * (2 * range + 1)) - range;
+            } else {
+                num1 = Math.floor(Math.random() * range) + 1;
+                num2 = Math.floor(Math.random() * range) + 1;
+            }
+            
             if (num1 === 0) num1 = 1;
             if (num2 === 0) num2 = 1;
 
@@ -900,21 +1216,34 @@
                 problem = `${num1} - ${num2}`;
             } else if (op === '*') {
                 const m_range = Math.min(12, range);
-                num1 = Math.floor(Math.random() * (2 * m_range + 1)) - m_range;
-                num2 = Math.floor(Math.random() * (2 * m_range + 1)) - m_range;
+                if (useIntegers) {
+                    num1 = Math.floor(Math.random() * (2 * m_range + 1)) - m_range;
+                    num2 = Math.floor(Math.random() * (2 * m_range + 1)) - m_range;
+                } else {
+                    num1 = Math.floor(Math.random() * m_range) + 1;
+                    num2 = Math.floor(Math.random() * m_range) + 1;
+                }
+                if (num1 === 0) num1 = 1;
+                if (num2 === 0) num2 = 1;
                 answer = num1 * num2;
                 problem = `${num1} × ${num2}`;
             } else if (op === '/') {
-                const d_range = Math.min(10, range); 
+                const d_range = Math.min(10, range);
                 
-                let divisor = Math.floor(Math.random() * (2 * d_range + 1)) - d_range;
-                while (divisor === 0) {
-                    divisor = Math.floor(Math.random() * (2 * d_range + 1)) - d_range;
+                if (useIntegers) {
+                    let divisor = Math.floor(Math.random() * (2 * d_range + 1)) - d_range;
+                    while (divisor === 0) {
+                        divisor = Math.floor(Math.random() * (2 * d_range + 1)) - d_range;
+                    }
+                    answer = Math.floor(Math.random() * (2 * d_range + 1)) - d_range;
+                    num1 = answer * divisor;
+                    num2 = divisor;
+                } else {
+                    let divisor = Math.floor(Math.random() * d_range) + 1;
+                    answer = Math.floor(Math.random() * d_range) + 1;
+                    num1 = answer * divisor;
+                    num2 = divisor;
                 }
-                
-                answer = Math.floor(Math.random() * (2 * d_range + 1)) - d_range;
-                num1 = answer * divisor;
-                num2 = divisor;
                 
                 problem = `${num1} ÷ ${num2}`;
             }
@@ -923,7 +1252,6 @@
         return { problem: problem, answer: answer };
     }
 
-    /** Draws the entire road scene including the car and lines. */
     function draw() {
         if (!gameState.isRunning) {
             drawStaticScreen();
@@ -933,36 +1261,25 @@
         const W = CANVAS.width;
         const H = CANVAS.height;
 
-        // Apply shake offset if dashing
         const shakeX = gameState.shakeOffset > 0 ? (Math.random() * gameState.shakeOffset * 2) - gameState.shakeOffset : 0;
         const shakeY = gameState.shakeOffset > 0 ? (Math.random() * gameState.shakeOffset * 2) - gameState.shakeOffset : 0;
 
-        // Decrease shake for next frame
         gameState.shakeOffset = Math.max(0, gameState.shakeOffset - 0.5); 
         
-        // 1. Clear Canvas
         CTX.clearRect(0, 0, W, H);
 
-        // 2. Draw Background Image (Road/Sky) - Scrolling effect
         if (backgroundImage.complete && gameState.bgImageLoaded) {
-            // Calculate a single background image height based on its aspect ratio
             const bgImageAspect = backgroundImage.height / backgroundImage.width;
             const bgImageH = W * bgImageAspect;
             
-            // Draw the image, shifted by bgImageY, which scrolls downward (positive speed)
-            // Draw one image to fill the canvas, and a second one seamlessly above it
             CTX.drawImage(backgroundImage, 0, gameState.bgImageY, W, bgImageH);
             CTX.drawImage(backgroundImage, 0, gameState.bgImageY - bgImageH, W, bgImageH);
 
-            // Update scrolling position
-            // Reset position when the first image has scrolled completely off screen
             gameState.bgImageY = (gameState.bgImageY + gameState.currentCarSpeed) % bgImageH;
         } else {
-             // Fallback: Draw Road (Dark Gray)
             CTX.fillStyle = '#30363d';
             CTX.fillRect(0, 0, W, H);
             
-            // Fallback: Draw Center Line 
             CTX.fillStyle = '#ffffff'; 
             const centerLineX = W / 2 - (W * 0.0125); 
             const lineWidth = W * 0.025; 
@@ -971,35 +1288,26 @@
             for (let y = -gameState.laneLineLength + lineOffset + shakeY; y < H + shakeY; y += (gameState.laneLineLength + gameState.laneGap)) {
                 CTX.fillRect(centerLineX + shakeX, y, lineWidth, gameState.laneLineLength);
             }
-            // Update lane offset for fallback animation
             gameState.laneOffset += gameState.currentCarSpeed;
         }
         
-        // 3. Apply brief flash effect if dashing after correct answer
         if (gameState.flashOpacity > 0) {
-            CTX.fillStyle = `rgba(255, 255, 255, ${gameState.flashOpacity})`; // White/Yellow flash
+            CTX.fillStyle = `rgba(255, 255, 255, 0.7)`; 
             CTX.fillRect(0, 0, W, H);
-            gameState.flashOpacity = Math.max(0, gameState.flashOpacity - 0.1); // Fade quickly
+            gameState.flashOpacity = Math.max(0, gameState.flashOpacity - 0.1); 
         }
         
-        // 4. Draw Competitor Cars
         if (gameState.competitors.length > 0) {
             const enemyCarW = W * 0.08; 
             const enemyCarH = H * 0.07; 
-            // Lane positions: Left, Middle-Left, Middle-Right, Right
             const laneOffsets = [W * 0.1, W * 0.35, W * 0.60, W * 0.85];
 
             gameState.competitors.forEach((competitor, index) => {
-                // Calculate position based on competitor distance vs. player distance.
                 const distDiff = competitor.distance - gameState.distance; 
-                
-                // Scale distance difference to screen pixel position (10 pixels per meter difference)
                 const yOffset = distDiff * 10; 
 
-                // Place the enemy car relative to the bottom of the screen
-                let enemyY = H - (H * 0.3) - yOffset; // Start drawing enemies from about 30% up
+                let enemyY = H - (H * 0.3) - yOffset; 
                 
-                // Don't draw if too far off screen (more than 1 car length off the top/bottom)
                 if (enemyY < -enemyCarH || enemyY > H) return;
                 
                 const enemyX = laneOffsets[index % laneOffsets.length] - enemyCarW / 2;
@@ -1007,28 +1315,24 @@
                 const enemyDrawX = enemyX + shakeX * 0.2;
                 const enemyDrawY = enemyY + shakeY * 0.2;
 
-                // Draw Car Body (Red/Opponent Color)
                 CTX.fillStyle = '#f85149'; 
                 CTX.fillRect(enemyDrawX, enemyDrawY, enemyCarW, enemyCarH);
                 
-                // Draw Name Tag
                 CTX.fillStyle = '#ffffff';
                 CTX.font = `${Math.floor(W * 0.025)}px Chivo Mono`;
                 CTX.textAlign = 'center';
-                CTX.fillText(competitor.userName.substring(0, 5), enemyDrawX + enemyCarW / 2, enemyDrawY - 5);
+                CTX.fillText(competitor.userSurname.substring(0, 5), enemyDrawX + enemyCarW / 2, enemyDrawY - 5);
             });
         }
         
-        // 5. Draw Speed Lines (Visual Dash Effect - Drawn on top of background)
         if (gameState.currentCarSpeed > gameState.baseCarSpeed * 1.5) {
             CTX.strokeStyle = 'rgba(255, 255, 255, 0.7)';
             CTX.lineWidth = 2;
             
-            // Draw 10 random speed lines rushing past the car
             for (let i = 0; i < 10; i++) {
                 const lineX = Math.random() * W;
                 const lineStart = Math.random() * H;
-                const lineLength = gameState.currentCarSpeed * 3; // Length proportional to speed
+                const lineLength = gameState.currentCarSpeed * 3; 
 
                 CTX.beginPath();
                 CTX.moveTo(lineX, lineStart);
@@ -1037,47 +1341,37 @@
             }
         }
 
-        // 6. Draw Player Car (Simple shape) - Always on top
-        const carW = W * 0.10; // 10% of width
-        const carH = H * 0.175; // 17.5% of height
+        const carW = W * 0.10; 
+        const carH = H * 0.175; 
         const carX = W / 2 - carW / 2;
-        const carY = H - carH - (H * 0.075); // 7.5% from bottom
+        const carY = H - carH - (H * 0.075); 
 
-        // Apply subtle shake to car position
         const carDrawX = carX + shakeX * 0.5;
         const carDrawY = carY + shakeY * 0.5;
 
-        // Main Car Body (Yellow)
         CTX.fillStyle = '#f9d22d';
         CTX.fillRect(carDrawX, carDrawY, carW, carH);
-        // Cabin (Black/Dark)
         CTX.fillStyle = '#0d1117';
         CTX.fillRect(carDrawX + carW * 0.1, carDrawY + carH * 0.2, carW * 0.8, carH * 0.5);
-        // Headlights (White/Bright)
         CTX.fillStyle = '#ffffff';
         CTX.fillRect(carDrawX, carDrawY + carH - (H * 0.0125), carW * 0.25, H * 0.0125);
         CTX.fillRect(carDrawX + carW * 0.75, carDrawY + carH - (H * 0.0125), carW * 0.25, H * 0.0125);
 
-        // Car Number Display
         CTX.fillStyle = '#f85149';
         CTX.font = `${Math.floor(W * 0.045)}px Chivo Mono`;
         CTX.textAlign = 'center';
         CTX.fillText('#7', carDrawX + carW / 2, carDrawY + carH * 0.45);
 
-        // 7. Update Game State for Next Frame
         updateGamePhysics();
     }
 
-    /** Draws the initial or paused screen. */
     function drawStaticScreen() {
         const W = CANVAS.width;
         const H = CANVAS.height;
         
         CTX.clearRect(0, 0, W, H);
 
-        // Use the background image even for the static screen if loaded
         if (backgroundImage.complete && gameState.bgImageLoaded) {
-            // Draw a single instance of the background image, centered and covering the canvas
             const scale = Math.max(W / backgroundImage.width, H / backgroundImage.height);
             const x = (W / 2) - (backgroundImage.width / 2) * scale;
             const y = (H / 2) - (backgroundImage.height / 2) * scale;
@@ -1085,12 +1379,9 @@
             const height = backgroundImage.height * scale;
             CTX.drawImage(backgroundImage, x, y, width, height);
 
-            // Add a subtle dark blue overlay for contrast with text
-            // MODIFIED: Reduced opacity to 0.4 to ensure the dark image is clearly visible
             CTX.fillStyle = 'rgba(0, 30, 60, 0.4)'; 
             CTX.fillRect(0, 0, W, H);
         } else {
-            // Fallback
             CTX.fillStyle = '#161b22';
             CTX.fillRect(0, 0, W, H);
         }
@@ -1103,44 +1394,44 @@
         CTX.fillStyle = '#c9d1d9';
         CTX.font = `${Math.floor(W * 0.04)}px Chivo Mono`;
         CTX.fillText('Select a mode to start racing!', W / 2, H / 2 + 20);
-        CTX.fillText(`Player: ${userName}`, W / 2, H / 2 + 50);
+        
+        if (userSurname && userSection) {
+            CTX.fillText(`Player: ${userSurname} (${userSection})`, W / 2, H / 2 + 50);
+        }
     }
 
     function updateGamePhysics() {
         if (!gameState.isRunning) return;
         
-        // This simulates the distance traveled in this session (player's progress)
         gameState.distance += gameState.currentCarSpeed / 10;
         DISTANCE_ELEM.textContent = `${Math.floor(gameState.distance)} m`;
 
-        // Decay speed back to base speed
         gameState.currentCarSpeed = Math.max(gameState.baseCarSpeed, gameState.currentCarSpeed - 0.1); 
-        
-        // The current implementation saves the final score only on game end.
     }
 
-    /**
-     * Starts the game with the current mode.
-     */
     function startGame(mode) {
+        if (!userSurname || !userSection) {
+            alert("Please sign in with your Surname and Section first.");
+            setView('input');
+            return;
+        }
+
         if (!mode) return showMenu();
 
-        // Switch to game screen
         setView('game');
         GAME_OVER_MODAL.classList.add('hidden');
         
-        // Reset state
         gameState.isRunning = true;
         gameState.score = 0;
         gameState.time = 0;
         gameState.distance = 0;
         gameState.maxNumber = 10;
-        gameState.mode = mode; // Set the selected mode
+        gameState.mode = mode; 
         gameState.dashSpeed = 10; 
         gameState.currentCarSpeed = gameState.baseCarSpeed;
-        gameState.shakeOffset = 0; // Reset shake
-        gameState.flashOpacity = 0; // Reset flash
-        gameState.bgImageY = 0; // Reset background scroll position
+        gameState.shakeOffset = 0; 
+        gameState.flashOpacity = 0; 
+        gameState.bgImageY = 0; 
         
         SCORE_ELEM.textContent = gameState.score;
         TIME_ELEM.textContent = `${gameState.timeLimit}s`;
@@ -1152,7 +1443,6 @@
         SUBMIT_BUTTON.style.backgroundColor = '#58a6ff';
         SUBMIT_BUTTON.style.boxShadow = '0 4px #448ccf';
 
-        // Clear existing intervals
         if (gameState.gameInterval) clearInterval(gameState.gameInterval);
         
         gameState.gameInterval = setInterval(gameLoop, 1000 / 60);
@@ -1161,7 +1451,7 @@
         gameState.timeLimitInterval = setInterval(updateTime, 1000);
 
         newQuestion();
-        startCompetitorListener(); // Start listening for competitors in this mode
+        startCompetitorListener(); 
     }
 
     function gameLoop() {
@@ -1181,16 +1471,12 @@
         }
     }
 
-    /**
-     * Generates and displays a new question based on the selected mode.
-     */
     function newQuestion() {
         if (gameState.score > 0 && gameState.score % 5 === 0) {
             gameState.maxNumber += 5; 
             if (gameState.maxNumber > 30) gameState.maxNumber = 30;
         }
 
-        // Use the current mode for question generation
         gameState.question = generateIntegerProblem(gameState.maxNumber, gameState.mode);
         gameState.correctAnswer = gameState.question.answer;
         QUESTION_DISPLAY.textContent = `${gameState.question.problem} = ?`;
@@ -1199,7 +1485,6 @@
 
     function checkAnswer() {
         if (!gameState.isRunning) {
-            // If game is paused on the game screen, tapping SUBMIT acts as START
             startGame(gameState.mode);
             return;
         }
@@ -1212,16 +1497,14 @@
         }
 
         if (userAnswer === gameState.correctAnswer) {
-            // SUCCESS: Apply Dash effect
             gameState.currentCarSpeed = gameState.dashSpeed;
-            gameState.shakeOffset = gameState.shakeIntensity; // Activate shake
-            gameState.flashOpacity = 1; // Activate immediate flash
+            gameState.shakeOffset = gameState.shakeIntensity; 
+            gameState.flashOpacity = 1; 
             gameState.score++;
             SCORE_ELEM.textContent = gameState.score;
             showFeedback("CORRECT! DASH!", 'correct-message');
             newQuestion();
         } else {
-            // FAILURE: Apply minor slow down and feedback
             gameState.currentCarSpeed = Math.max(1, gameState.currentCarSpeed - 1);
             showFeedback("INCORRECT. Try again.", 'incorrect-message');
         }
@@ -1244,7 +1527,6 @@
         clearInterval(gameState.gameInterval);
         clearInterval(gameState.timeLimitInterval);
         
-        // Save score will now check if it's a new high score and update the unique document
         saveScore(gameState.score, gameState.distance);
         stopCompetitorListener(); 
         
@@ -1261,9 +1543,6 @@
         ANSWER_INPUT.value = '';
     }
 
-
-    // --- Event Listeners and Initialization ---
-    
     function resizeCanvas() {
         const width = CANVAS_WRAPPER.clientWidth;
         CANVAS.width = width;
@@ -1274,11 +1553,10 @@
 
         if (gameState.isRunning) {
             draw();
-        } else {
-            drawStaticScreen();
+        } else if (!MENU_SCREEN.classList.contains('hidden')) {
+             drawStaticScreen(); 
         }
     }
-
 
     function handleKeypadPress(event) {
         const key = event.target.dataset.key;
@@ -1303,33 +1581,58 @@
         }
     }
 
-    /**
-     * Initialize the application.
-     */
     window.onload = function() {
         initFirebase();
         
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         
-        // --- Event Listeners ---
+        // Register service worker for offline support
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered:', registration);
+                })
+                .catch(error => {
+                    console.log('Service Worker registration failed:', error);
+                });
+        }
+        
+        // Event Listeners
+        PLAY_BUTTON.addEventListener('click', () => setView('input'));
+        QUIT_BUTTON.addEventListener('click', quitProgram);
+        
+        // Back to Home button
+        const BACK_TO_HOME_BUTTON = document.getElementById('backToHomeButton');
+        BACK_TO_HOME_BUTTON.addEventListener('click', () => {
+            setView('home');
+            showHome();
+        });
+        
         document.getElementById('keypad').addEventListener('click', handleKeypadPress);
         RESTART_BUTTON.addEventListener('click', () => startGame(gameState.mode));
         BACK_TO_MENU_BUTTON.addEventListener('click', showMenu);
         USER_ID_CONTAINER.addEventListener('click', copyUserIdToClipboard);
         SIGN_IN_BUTTON.addEventListener('click', handleSignIn);
-        USER_NAME_INPUT.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleSignIn();
+
+        // Add input validation listeners
+        SURNAME_INPUT.addEventListener('input', validateUserInput);
+        YEAR_SECTION_SELECT.addEventListener('change', validateUserInput);
+
+        [SURNAME_INPUT, YEAR_SECTION_SELECT].forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !SIGN_IN_BUTTON.disabled) {
+                    handleSignIn();
+                }
+            });
         });
 
-        // Menu button listeners
         document.querySelectorAll('.mode-button').forEach(button => {
             button.addEventListener('click', (e) => {
                 startGame(e.target.dataset.mode);
             });
         });
         
-        // Leaderboard filter listeners
         document.querySelectorAll('.leaderboard-filter-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 const filter = e.target.dataset.filter;
@@ -1342,9 +1645,6 @@
             e.preventDefault();
             if (e.key === 'Enter') checkAnswer();
         });
-        
-        // Start on the input screen initially, which leads to the menu
-        // setView('input'); // This is already called inside initFirebase
     };
 
 </script>
